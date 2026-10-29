@@ -9,6 +9,15 @@ from .discord_api import DiscordError
 
 VER_CANAL = 1 << 10          # permiso "Ver canal"
 TIPOS_TEXTO = (0, 5)         # canal de texto y de anuncios
+ADMINISTRADOR, GESTIONAR_SERVIDOR = 1 << 3, 1 << 5
+# Lo que el bot necesita dentro del canal privado: ver, escribir, adjuntar, reaccionar, historial, gestionar mensajes
+PERMISOS_BOT = (1 << 10) | (1 << 11) | (1 << 15) | (1 << 6) | (1 << 16) | (1 << 13)
+# Para el enlace de invitación: lo de arriba + Gestionar canales (para crear los dos canales solo)
+PERMISOS_INVITACION = PERMISOS_BOT | (1 << 4)
+
+
+def enlace_invitacion(app_id):
+    return f"https://discord.com/oauth2/authorize?client_id={app_id}&scope=bot&permissions={PERMISOS_INVITACION}"
 
 
 class ErrorDestino(DiscordError):
@@ -53,14 +62,29 @@ def resolver(cfg_discord, dc, log=print):
         if not candidatos:
             raise ErrorDestino("El bot no está en ningún servidor. Invítalo con el enlace de OAuth2 (paso 1 del LEEME).")
 
-    encontrados, vistos = [], []
+    yo = dc.quien_soy()["id"]
+
+    def entrada(g):
+        m = dc.miembro(g["id"], yo) or {}
+        return m.get("joined_at") or ""
+
+    encontrados, vistos, por_id = [], [], {}
     for g in candidatos:
         chans = dc.canales_de(g["id"])
+        por_id[g["id"]] = chans
         a, b = _buscar(chans, env), _buscar(chans, rev)
         if a and b:
             encontrados.append((g, a, b))
         nombres = [c.get("name") for c in chans if c.get("type") in TIPOS_TEXTO]
         vistos.append(f"{g.get('name', g['id'])}: " + ", ".join("#" + n for n in nombres[:25]))
+
+    # El último servidor al que invitaste el bot, si le faltan los canales, los crea el bot (si puede)
+    if cfg_discord.get("crear_canales", True):
+        nuevo = max(candidatos, key=entrada) if len(candidatos) > 1 else candidatos[0]
+        if not any(e[0]["id"] == nuevo["id"] for e in encontrados):
+            hecho = crear_canales(dc, nuevo, por_id[nuevo["id"]], env, rev, cfg_discord, yo, log)
+            if hecho:
+                encontrados.append((nuevo,) + hecho)
 
     if not encontrados:
         donde = "ese servidor" if serv.isdigit() else f"ninguno de los {len(candidatos)} servidores donde está el bot"
@@ -72,12 +96,7 @@ def resolver(cfg_discord, dc, log=print):
     if len(encontrados) > 1:
         # Varios servidores tienen los dos canales: gana aquel al que invitaste el bot más recientemente.
         # Así, para mudar el tendedero basta con invitar el bot al servidor nuevo.
-        yo = dc.quien_soy()["id"]
-
-        def entrada(e):
-            m = dc.miembro(e[0]["id"], yo) or {}
-            return m.get("joined_at") or ""
-        elegido = max(encontrados, key=entrada)
+        elegido = max(encontrados, key=lambda e: entrada(e[0]))
         nombres = ", ".join(e[0].get("name", e[0]["id"]) for e in encontrados)
         log(f"::warning::Los canales existen en varios servidores ({nombres}). Uso '{elegido[0].get('name')}', "
             "el último al que invitaste el bot. Para fijar uno, pon su ID en 'servidor' en config.yml.")
@@ -94,3 +113,41 @@ def _permisos_everyone(dc, servidor_id):
         if str(r.get("id")) == str(servidor_id):
             return r.get("permissions", "0")
     return None
+
+
+def crear_canales(dc, g, chans, env, rev, cfg_discord, yo, log):
+    """Crea en el servidor g los canales que falten. Devuelve (canal_envios, canal_revision) o None."""
+    a, b = _buscar(chans, env), _buscar(chans, rev)
+    for v in (env, rev):
+        if str(v).strip().isdigit() and not _buscar(chans, v):
+            log(f"::warning::En config.yml el canal '{v}' es un ID, así que no puedo crearlo en '{g.get('name')}'. "
+                "Pon nombres de canal para que el bot los cree solo.")
+            return None
+    try:
+        if a is None:
+            a = dc.crear_canal(g["id"], normalizar(env), "Manda aquí tu foto para el tendedero del mundo de VRChat. "
+                               "Un admin la revisa y en unos minutos aparece colgada con tu nombre.")
+            dc.enviar(a["id"], "📸 **Manda aquí tu foto** y aparecerá en el tendedero del mundo, con tu nombre.\n"
+                               "Los admins la revisan antes de colgarla. Una foto por mensaje.")
+            log(f"::notice::Creé #{a.get('name')} en '{g.get('name')}'.")
+        if b is None:
+            # Privado: nadie lo ve salvo el bot y los roles de administrador (y los de roles_admin_ids)
+            permitidos = {str(r) for r in cfg_discord.get("roles_admin_ids", [])}
+            for r in dc.roles(g["id"]):
+                if int(r.get("permissions", 0)) & (ADMINISTRADOR | GESTIONAR_SERVIDOR) and str(r["id"]) != str(g["id"]):
+                    permitidos.add(str(r["id"]))
+            ow = [{"id": str(g["id"]), "type": 0, "allow": "0", "deny": str(VER_CANAL)},
+                  {"id": str(yo), "type": 1, "allow": str(PERMISOS_BOT), "deny": "0"}]
+            ow += [{"id": r, "type": 0, "allow": str(VER_CANAL), "deny": "0"} for r in sorted(permitidos)]
+            b = dc.crear_canal(g["id"], normalizar(rev), "Revisión del tendedero: ✅ aprobar · ⭐ VIP · ❌ rechazar. "
+                               "Quien vea este canal puede aprobar fotos.", ow)
+            dc.enviar(b["id"], "Aquí llegan las fotos para revisar. Reacciona **✅** para aprobar, **⭐** para ponerla "
+                               "como VIP o **❌** para rechazarla (o para quitar una ya colgada).\n"
+                               "Solo los administradores ven este canal; si quieres que otros revisen, dales permiso de "
+                               "*Ver canal* aquí.")
+            log(f"::notice::Creé #{b.get('name')} (privado) en '{g.get('name')}'.")
+        return a, b
+    except DiscordError as e:
+        log(f"::warning::No pude crear los canales en '{g.get('name')}': {e}. Invita el bot con permiso de "
+            f"Gestionar canales: {enlace_invitacion(yo)}")
+        return None

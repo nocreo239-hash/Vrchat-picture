@@ -30,17 +30,16 @@ como Polaroids colgadas en tu mundo de VRChat, con el nombre de quien la mandó 
 3. Entra a **OAuth2 → URL Generator**:
    - En *Scopes* marca **bot**.
    - En *Bot Permissions* marca: **View Channels, Send Messages, Attach Files, Add Reactions,
-     Read Message History, Manage Messages**.
+     Read Message History, Manage Messages, Manage Channels**.
    - Copia la URL de abajo, ábrela y añade el bot a tu servidor.
 
-## Paso 2 — Preparar los canales (2 min)
+## Paso 2 — Los canales (0 min)
 
-1. Crea un canal público llamado `manda-tu-polaroid`.
-2. Crea un canal privado llamado `revision-polaroids`: en sus permisos, quita *Ver canal* a
-   `@everyone` y dáselo solo a tus admins y al bot. **Quien pueda ver este canal puede aprobar fotos.**
+No tienes que hacer nada: en la primera pasada el bot crea `#manda-tu-polaroid` (público) y
+`#revision-polaroids` (privado, solo para administradores). Quien pueda ver el canal de revisión puede
+aprobar fotos; si quieres que otros revisen, dales *Ver canal* ahí.
 
-No hace falta copiar ningún ID: el bot encuentra los canales por su nombre. Si prefieres otros nombres,
-cámbialos en `config.yml`.
+¿Prefieres crearlos tú o usar otros nombres? Créalos y pon sus nombres en `config.yml`.
 
 ## Paso 3 — Crear tu repositorio en GitHub (5 min)
 
@@ -77,12 +76,14 @@ Ahí ves cómo se ve el tendedero ahora mismo.
 
 ## Mudar el tendedero a otro servidor
 
-1. Invita el bot al servidor nuevo con el mismo enlace del paso 1.
-2. Crea ahí los dos canales del paso 2, con los mismos nombres.
-3. Listo: en la siguiente pasada el bot trabaja en el servidor nuevo. Las fotos ya colgadas se quedan.
+1. Invita el bot al servidor nuevo. El enlace aparece en cada pasada, en **Actions → Tendedero → (la última) →
+   notas**, y ya trae el permiso de *Gestionar canales*.
+2. Listo. En la siguiente pasada (10–20 min) el bot crea `#manda-tu-polaroid` y el canal de revisión
+   (privado: solo lo ven el bot y los roles de administrador) y empieza a trabajar ahí.
+   Las fotos ya colgadas se quedan.
 
-Si el bot está en varios servidores que tienen esos canales, usa **el último al que lo invitaste**.
-Para fijar uno, pon su ID en `servidor` en `config.yml`.
+El bot trabaja en **el último servidor al que lo invitaste**. Para fijar uno, pon su ID en `servidor`
+en `config.yml`. Si no quieres que cree canales solo, pon `crear_canales: false`.
 
 ## Ajustes útiles (`config.yml`)
 

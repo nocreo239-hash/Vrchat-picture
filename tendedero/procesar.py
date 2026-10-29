@@ -309,6 +309,8 @@ def main():
     d = t.destino
     log(f"::notice::Servidor '{d['nombre_servidor']}' · envíos #{d['nombre_envios']} · revisión #{d['nombre_revision']}"
         f"{' (privado)' if d['privado'] else ''} · cambios: {', '.join(t.cambios) or 'ninguno'}")
+    log(f"::notice::Para llevar el tendedero a otro servidor, invita el bot con este enlace (crea los canales solo): "
+        f"{destino.enlace_invitacion(t.dc.quien_soy()['id'])}")
     log("Cambios:", ", ".join(t.cambios) or "ninguno", "| versión", version, "| publicar:", publicar)
     if salida:
         with open(salida, "a") as f:

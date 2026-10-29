@@ -78,7 +78,11 @@ class DiscordFalso:
     def miembro(self, servidor, uid):
         if uid == BOT: return {"roles": [], "joined_at": self.servidores[servidor]["entro"]}
         return self.miembros.get(uid, {"roles": []})
-    def roles(self, servidor): return [{"id": servidor, "permissions": str(1 << 10)}]   # @everyone ve canales
+    def roles(self, servidor): return [{"id": servidor, "permissions": str(1 << 10)}, {"id": "admins" + servidor, "permissions": str(1 << 3)}]
+    def crear_canal(self, servidor, nombre, tema="", overwrites=None):
+        ch = {"id": self._id(), "type": 0, "name": nombre, "topic": tema, "permission_overwrites": overwrites or []}
+        self.servidores[servidor]["canales"].append(ch)
+        return ch
     def mis_servidores(self): return [{"id": k, "name": v["name"]} for k, v in self.servidores.items()]
     def canales_de(self, servidor): return self.servidores.get(servidor, {}).get("canales", [])
     def descargar(self, url): return self.archivos[url]
@@ -223,6 +227,18 @@ def main():
     dc.servidores["11"]["canales"][1]["permission_overwrites"] = privado2
     Tendedero(cfg2, dc, Datos(tmp), ahora=ahora)   # privado y sin roles: vale
     print("9 ok: sin roles solo funciona si el canal de revisión es privado")
+
+    # 10) invitan el bot a un servidor nuevo sin canales -> los crea (el de revisión privado) y se muda
+    dc.servidores["12"] = {"name": "Nuevo", "entro": "2026-09-01T00:00:00", "canales": [{"id": "99", "type": 0, "name": "general"}]}
+    tt, _ = pasada(ahora + 17 * 86400)
+    nombres = {c["name"]: c for c in dc.servidores["12"]["canales"]}
+    assert "manda-tu-polaroid" in nombres and "revision-polaroids" in nombres, nombres.keys()
+    rev = nombres["revision-polaroids"]
+    assert tt.servidor == "12" and tt.revision == rev["id"] and tt.destino["privado"]
+    ids = {o["id"]: o for o in rev["permission_overwrites"]}
+    assert int(ids["12"]["deny"]) & (1 << 10) and ids[BOT]["type"] == 1 and "admins12" in ids
+    assert dc.canales.get(nombres["manda-tu-polaroid"]["id"]), "falta el mensaje de bienvenida"
+    print("10 ok: servidor nuevo -> el bot crea los dos canales (revisión privada) y se muda")
 
     # Atlas de muestra para revisar a ojo (con fotos frescas)
     shutil.rmtree(tmp / "data"); dc2 = DiscordFalso()

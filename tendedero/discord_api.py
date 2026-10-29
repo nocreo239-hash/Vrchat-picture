@@ -72,6 +72,10 @@ class Discord:
     def canales_de(self, servidor):
         return self._pedir("GET", f"/guilds/{servidor}/channels") or []
 
+    def crear_canal(self, servidor, nombre, tema="", overwrites=None):
+        datos = {"name": nombre, "type": 0, "topic": tema, "permission_overwrites": overwrites or []}
+        return self._json("POST", f"/guilds/{servidor}/channels", datos)
+
     def roles(self, servidor):
         return self._pedir("GET", f"/guilds/{servidor}/roles") or []
 

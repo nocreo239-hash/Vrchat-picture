@@ -13,6 +13,9 @@ discord:
   # Quién puede aprobar. Vacío = cualquiera que pueda ver el canal de revisión (por eso tiene que
   # ser privado). Si pones roles, recuerda que cada servidor tiene los suyos.
   roles_admin_ids: []
+  # Si invitas el bot a un servidor que no tiene estos canales, los crea solo (el de revisión, privado:
+  # solo lo ven el bot y los roles de administrador). Necesita el permiso "Gestionar canales".
+  crear_canales: true
 
   # Borrar la foto del canal público después de pasarla a revisión (recomendado:
   # así nadie ve fotos que todavía no se aprobaron).
