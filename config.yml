@@ -1,0 +1,52 @@
+# ============================================================
+#  Tendedero de Polaroids para VRChat — configuración
+#  Cambia los valores de esta parte y guarda. El resto es opcional.
+# ============================================================
+
+discord:
+  # Para copiar estos números: en Discord activa Ajustes > Avanzado > Modo desarrollador,
+  # luego clic derecho sobre el servidor / canal / rol > "Copiar ID".
+  servidor_id: "000000000000000000"
+  canal_envios_id: "000000000000000000"     # canal público donde la gente manda su foto
+  canal_revision_id: "000000000000000000"   # canal privado: solo el bot y los admins
+  roles_admin_ids:                          # roles que pueden aprobar (uno o varios)
+    - "000000000000000000"
+
+  # Borrar la foto del canal público después de pasarla a revisión (recomendado:
+  # así nadie ve fotos que todavía no se aprobaron).
+  borrar_original: true
+  # Avisar en el canal público que la foto se recibió (el aviso se borra solo después).
+  avisar_recibida: true
+  minutos_aviso: 60
+
+tendedero:
+  vip: 5                 # pinzas para fotos VIP (no caducan; el admin las quita con ❌)
+  comunitarias: 15       # pinzas para fotos de la comunidad
+  horas_rotacion: 6      # si hay más comunitarias que pinzas, rotan cada estas horas
+  dias_caducidad: 7      # las comunitarias se borran solas después de estos días
+  max_guardadas: 60      # máximo de comunitarias guardadas a la vez (las más viejas salen)
+  dias_pendiente: 14     # fotos sin revisar se descartan después de estos días
+  vacias: "invitacion"   # pinzas vacías: "invitacion" (Polaroid con instrucciones) u "ocultar"
+
+imagen:
+  tamano_atlas: 2048     # máximo que acepta VRChat
+  columnas: 5
+  filas: 4               # columnas x filas = número de pinzas (vip + comunitarias)
+  formato: "jpg"
+  calidad: 88
+  color_marco: "#f3efe6"
+  color_texto: "#2a2622"
+  color_vip: "#c9a227"
+  max_letras_nombre: 22
+
+textos:
+  aviso_recibida: "📨 {mencion} ¡recibimos tu foto! Los admins la revisan pronto."
+  revision: "📸 Foto de **{autor}**\n✅ aprobar · ⭐ aprobar como VIP · ❌ rechazar"
+  aprobada: "✅ Aprobada por {admin}"
+  aprobada_vip: "⭐ Aprobada como VIP por {admin}"
+  rechazada: "❌ Rechazada por {admin}"
+  quitada: "🗑️ Quitada del tendedero por {admin}"
+  caducada: "⌛ Caducó y salió del tendedero"
+  pendiente_caducada: "⌛ Nadie la revisó a tiempo"
+  invitacion_titulo: "¡Tu foto aquí!"
+  invitacion_texto: "Mándala en Discord"

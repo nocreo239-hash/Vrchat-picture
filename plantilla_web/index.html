@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tendedero de Polaroids</title>
+<style>
+  body { margin: 0; background: #151312; color: #eee6d8; font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+  h1 { font-weight: 600; margin: 0 0 4px; }
+  p { color: #b8ad9c; margin: 0 0 16px; }
+  img { width: 100%; height: auto; border-radius: 8px; display: block; }
+  code { background: #2a2623; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tendedero de Polaroids</h1>
+  <p>Así se ve ahora en el mundo · {{FOTOS}} fotos guardadas · versión <code>{{VERSION}}</code></p>
+  <img src="{{ATLAS}}" alt="Fotos del tendedero">
+  <p style="margin-top:16px">El mundo lee <code>manifest.json</code>, <code>atlas_0</code> y <code>atlas_1</code> desde esta página.</p>
+</main>
+</body>
+</html>
