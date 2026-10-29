@@ -2,7 +2,7 @@ name: Tendedero
 
 on:
   schedule:
-    - cron: "*/10 * * * *"     # cada 10 minutos (GitHub a veces se retrasa unos minutos)
+    - cron: "3-59/10 * * * *"   # cada 10 minutos (en minutos 3, 13, 23…: a la hora en punto GitHub va muy cargado)
   workflow_dispatch:            # botón "Run workflow" para correrlo a mano
   push:
     paths: ["config.yml"]       # al cambiar la configuración
