@@ -1,7 +1,19 @@
 {
- "ultimo_envio_id": "1565430945870385224",
- "pendientes": [],
- "avisos": [],
+ "ultimo_envio_id": "1565431201781522723",
+ "pendientes": [
+  {
+   "revision_id": "1565431412923043870",
+   "autor": "ALLAN_MARTIAN",
+   "recibida": 1793298330,
+   "canal": "1565430948105949326"
+  }
+ ],
+ "avisos": [
+  {
+   "id": "1565431424901709857",
+   "borrar": 1793301930
+  }
+ ],
  "ultimo_hash": "da3da4da179a",
  "ultimo_latido": "2026-10-29",
  "servidor": "1531051099484721328",
