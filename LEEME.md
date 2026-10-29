@@ -82,7 +82,13 @@ Ahí ves cómo se ve el tendedero ahora mismo.
    (privado: solo lo ven el bot y los roles de administrador) y empieza a trabajar ahí.
    Las fotos ya colgadas se quedan.
 
-El bot trabaja en **el último servidor al que lo invitaste**. Para fijar uno, pon su ID en `servidor`
+**Invitarlo desde el propio Discord** (botón *Agregar app* en el perfil del bot): en el portal de
+desarrolladores activa **Bot → Public Bot**, y en **Installation** elige *Install Link: Discord Provided
+Link*, con el scope `bot` y los permisos del paso 1. Es seguro gracias al **candado**: el bot solo trabaja
+en servidores cuyo dueño seas tú. Si alguien lo añade a su servidor, lo ignora (o se sale, con
+`salir_de_ajenos: true`). Para permitir el servidor de un amigo, pon su ID de usuario en `duenos_permitidos`.
+
+El bot trabaja en **el último servidor tuyo al que lo invitaste**. Para fijar uno, pon su ID en `servidor`
 en `config.yml`. Si no quieres que cree canales solo, pon `crear_canales: false`.
 
 ## Ajustes útiles (`config.yml`)

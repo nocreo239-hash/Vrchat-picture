@@ -76,6 +76,13 @@ class Discord:
         datos = {"name": nombre, "type": 0, "topic": tema, "permission_overwrites": overwrites or []}
         return self._json("POST", f"/guilds/{servidor}/channels", datos)
 
+    def aplicacion(self):
+        """La app del bot: trae quién es su dueño (o los miembros de su equipo)."""
+        return self._pedir("GET", "/oauth2/applications/@me") or {}
+
+    def salir_de(self, servidor):
+        self._pedir("DELETE", f"/users/@me/guilds/{servidor}")
+
     def roles(self, servidor):
         return self._pedir("GET", f"/guilds/{servidor}/roles") or []
 
@@ -109,9 +116,10 @@ class Discord:
         return self._pedir("GET", f"/channels/{canal}/messages/{mensaje_id}/reactions/{e}?limit=100") or []
 
     def miembro(self, servidor, usuario):
-        if usuario not in self._miembros:
-            self._miembros[usuario] = self._pedir("GET", f"/guilds/{servidor}/members/{usuario}")
-        return self._miembros[usuario]
+        clave = (str(servidor), str(usuario))   # el mismo usuario es otro miembro en cada servidor
+        if clave not in self._miembros:
+            self._miembros[clave] = self._pedir("GET", f"/guilds/{servidor}/members/{usuario}")
+        return self._miembros[clave]
 
     def descargar(self, url):
         req = urllib.request.Request(url, headers={"User-Agent": "TendederoPolaroid (1.0)"})

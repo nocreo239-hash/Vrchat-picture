@@ -61,6 +61,10 @@ def resolver(cfg_discord, dc, log=print):
         candidatos = dc.mis_servidores()
         if not candidatos:
             raise ErrorDestino("El bot no está en ningún servidor. Invítalo con el enlace de OAuth2 (paso 1 del LEEME).")
+        candidatos = solo_permitidos(dc, candidatos, cfg_discord, log)
+        if not candidatos:
+            raise ErrorDestino("El bot solo está en servidores de otras personas. Invítalo a un servidor tuyo "
+                               "(o añade al dueño en 'duenos_permitidos' de config.yml).")
 
     yo = dc.quien_soy()["id"]
 
@@ -151,3 +155,40 @@ def crear_canales(dc, g, chans, env, rev, cfg_discord, yo, log):
         log(f"::warning::No pude crear los canales en '{g.get('name')}': {e}. Invita el bot con permiso de "
             f"Gestionar canales: {enlace_invitacion(yo)}")
         return None
+
+
+def duenos(dc, cfg_discord):
+    """IDs de usuario cuyos servidores puede usar el tendedero: el dueño de la app del bot (o su equipo)
+    y los que pongas en duenos_permitidos."""
+    ids = {str(x).strip() for x in (cfg_discord.get("duenos_permitidos") or []) if str(x).strip("0 ")}
+    app = dc.aplicacion()
+    if app.get("owner", {}).get("id"):
+        ids.add(str(app["owner"]["id"]))
+    for m in (app.get("team") or {}).get("members", []):
+        if m.get("user", {}).get("id"):
+            ids.add(str(m["user"]["id"]))
+    return ids
+
+
+def solo_permitidos(dc, candidatos, cfg_discord, log):
+    """Candado: con el bot público cualquiera puede añadirlo a su servidor. Esos servidores se ignoran
+    (o el bot se sale, con salir_de_ajenos: true), así nadie se lleva tu tendedero."""
+    permitidos = duenos(dc, cfg_discord)
+    if not permitidos:
+        log("::warning::No pude saber quién es el dueño del bot; no aplico el candado de servidores.")
+        return candidatos
+    buenos = []
+    for g in candidatos:
+        info = dc.servidor(g["id"]) or {}
+        if str(info.get("owner_id")) in permitidos:
+            buenos.append(g)
+            continue
+        if cfg_discord.get("salir_de_ajenos"):
+            try:
+                dc.salir_de(g["id"])
+                log(f"::warning::Me salí de '{g.get('name')}': su dueño no está permitido.")
+            except DiscordError as e:
+                log(f"::warning::No pude salir de '{g.get('name')}': {e}")
+        else:
+            log(f"::warning::Ignoro '{g.get('name')}': su dueño no eres tú ni nadie de 'duenos_permitidos'.")
+    return buenos

@@ -83,6 +83,9 @@ class DiscordFalso:
         ch = {"id": self._id(), "type": 0, "name": nombre, "topic": tema, "permission_overwrites": overwrites or []}
         self.servidores[servidor]["canales"].append(ch)
         return ch
+    def aplicacion(self): return {"id": BOT, "owner": {"id": "500"}}
+    def servidor(self, sid): return {"id": sid, "owner_id": self.servidores[sid].get("dueno", "500")}
+    def salir_de(self, sid): self.servidores.pop(sid, None)
     def mis_servidores(self): return [{"id": k, "name": v["name"]} for k, v in self.servidores.items()]
     def canales_de(self, servidor): return self.servidores.get(servidor, {}).get("canales", [])
     def descargar(self, url): return self.archivos[url]
@@ -239,6 +242,24 @@ def main():
     assert int(ids["12"]["deny"]) & (1 << 10) and ids[BOT]["type"] == 1 and "admins12" in ids
     assert dc.canales.get(nombres["manda-tu-polaroid"]["id"]), "falta el mensaje de bienvenida"
     print("10 ok: servidor nuevo -> el bot crea los dos canales (revisión privada) y se muda")
+
+    # 11) candado: alguien añade el bot (público) a SU servidor -> se ignora, no crea canales ni se muda
+    dc.servidores["13"] = {"name": "Ajeno", "dueno": "666", "entro": "2026-12-01T00:00:00",
+                           "canales": [{"id": "98", "type": 0, "name": "general"}]}
+    tt, _ = pasada(ahora + 18 * 86400)
+    assert tt.servidor == "12", tt.servidor
+    assert len(dc.servidores["13"]["canales"]) == 1, "creó canales en un servidor ajeno"
+    cfg["discord"]["salir_de_ajenos"] = True
+    tt, _ = pasada(ahora + 18 * 86400 + 60)
+    assert "13" not in dc.servidores, "no se salió del servidor ajeno"
+    cfg["discord"]["salir_de_ajenos"] = False
+    # y si el dueño de ese servidor está en duenos_permitidos, sí lo usa
+    dc.servidores["14"] = {"name": "Amigo", "dueno": "777", "entro": "2026-12-02T00:00:00", "canales": []}
+    cfg["discord"]["duenos_permitidos"] = ["777"]
+    tt, _ = pasada(ahora + 18 * 86400 + 120)
+    assert tt.servidor == "14" and len(dc.servidores["14"]["canales"]) == 2
+    cfg["discord"]["duenos_permitidos"] = []
+    print("11 ok: candado — servidores ajenos ignorados (o abandonados); los permitidos sí")
 
     # Atlas de muestra para revisar a ojo (con fotos frescas)
     shutil.rmtree(tmp / "data"); dc2 = DiscordFalso()
