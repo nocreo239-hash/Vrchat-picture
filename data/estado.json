@@ -1,13 +1,14 @@
 {
- "ultimo_envio_id": "1565242958049968319",
+ "ultimo_envio_id": "1565430945870385224",
  "pendientes": [],
  "avisos": [],
  "ultimo_hash": "da3da4da179a",
  "ultimo_latido": "2026-10-29",
- "servidor": "1494546930108334200",
- "canal_envios": "1565236441263382570",
- "canal_revision": "1565236513879490661",
+ "servidor": "1531051099484721328",
+ "canal_envios": "1565430945035845783",
+ "canal_revision": "1565430948105949326",
  "servidores_aprobados": [
-  "1494546930108334200"
+  "1494546930108334200",
+  "1531051099484721328"
  ]
 }
