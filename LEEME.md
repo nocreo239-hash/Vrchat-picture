@@ -66,12 +66,12 @@ https://TU_USUARIO.github.io/TU_REPOSITORIO/
 
 Ahí ves cómo se ve el tendedero ahora mismo.
 
-## Paso 5 — Poner el tendedero en tu mundo (Unity)
+## Paso 5 — Poner el tendedero en tu mundo (Unity, 5 min)
 
-*(Prefab de Unity: en la siguiente versión del kit.)*
-
-Abrirás **Tendedero → Configurar**, pegarás `TU_USUARIO` y `TU_REPOSITORIO`, y la ventana
-genera sola las direcciones fijas que necesita VRChat.
+1. Importa el paquete del tendedero en tu proyecto de VRChat (SDK de mundos 3.4 o más nuevo).
+2. Abre **Tendedero Polaroid → Configurar**.
+3. Pega la dirección de tu página (`https://TU_USUARIO.github.io/TU_REPOSITORIO/`) y pulsa **Probar conexión**.
+4. Pulsa **Crear tendedero en la escena**, muévelo a su sitio (la flecha azul mira hacia la gente) y sube el mundo.
 
 ---
 
