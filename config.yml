@@ -28,6 +28,8 @@ discord:
   borrar_original: true
   # Avisar en el canal público que la foto se recibió (el aviso se borra solo después).
   avisar_recibida: true
+  # Avisar en el canal público cuando un admin aprueba la foto (también se borra solo después).
+  avisar_aprobada: true
   minutos_aviso: 60
 
 tendedero:
@@ -52,6 +54,8 @@ imagen:
 
 textos:
   aviso_recibida: "📨 {mencion} ¡recibimos tu foto! Los admins la revisan pronto."
+  aviso_aprobada: "✅ {mencion} ¡tu foto fue aprobada! En unos minutos aparece en el tendedero del mundo."
+  aviso_aprobada_vip: "⭐ {mencion} ¡tu foto fue aprobada como VIP! En unos minutos aparece en el tendedero del mundo."
   revision: "📸 Foto de **{autor}**\n✅ aprobar · ⭐ aprobar como VIP · ❌ rechazar"
   aprobada: "✅ Aprobada por {admin}"
   aprobada_vip: "⭐ Aprobada como VIP por {admin}"

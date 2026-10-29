@@ -143,11 +143,16 @@ def main():
     assert {f["tipo"] for f in fotos} == {"vip", "comunidad"}
     assert len(tt.d.estado["pendientes"]) == 1, "la del no-admin debe seguir pendiente"
     assert "Rechazada" in dc.canales["30"][ids[3]]["content"]
-    print("2 ok: VIP + comunitaria aprobadas, rechazo aplicado, el no-admin no cuenta")
+    avisos = [m["content"] for m in dc.canales["20"].values() if m["author"].get("bot")]
+    assert any("aprobada como VIP" in t and "<@71>" in t for t in avisos), avisos
+    assert any("fue aprobada!" in t for t in avisos), avisos
+    assert not any("<@73>" in t and "aprobada" in t for t in avisos), "avisó una rechazada"
+    assert not any("autor_id" in f for f in tt.d.fotos), "la foto publicada no debe guardar el ID del autor"
+    print("2 ok: VIP + comunitaria aprobadas (con aviso al autor), rechazo aplicado, el no-admin no cuenta")
 
     # 3) avisos se borran después de 60 min
     tt, _ = pasada(ahora + 3700)
-    assert not [m for m in dc.canales["20"].values() if m["author"].get("bot")], "los avisos no se borraron"
+    assert not [m for m in dc.canales["20"].values() if m["author"].get("bot") and "recibimos" in m["content"]], "los avisos no se borraron"
     print("3 ok: avisos borrados a la hora")
 
     # 4) muchas comunitarias para probar rotación: 30 aprobadas

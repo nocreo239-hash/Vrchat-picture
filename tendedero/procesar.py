@@ -152,8 +152,9 @@ class Tendedero:
                 rev = self.dc.enviar(self.revision, texto, datos, a.get("filename") or "foto.jpg")
                 for e in (APROBAR, VIP, RECHAZAR):
                     self.dc.reaccionar(self.revision, rev["id"], e)
+                # autor_id solo mientras está pendiente, para avisarle al aprobarla; no se guarda en la foto publicada
                 self.d.estado["pendientes"].append({"revision_id": rev["id"], "autor": autor, "recibida": int(self.ahora),
-                                                    "canal": self.revision})
+                                                    "canal": self.revision, "autor_id": m["author"]["id"]})
                 self.cambios.append(f"recibida de {autor}")
             if c.get("avisar_recibida", True):
                 aviso = self.dc.enviar(self.envios, self.textos["aviso_recibida"].format(mencion=f"<@{m['author']['id']}>"),
@@ -208,7 +209,28 @@ class Tendedero:
                 self.d.estado["pendientes"].remove(p)
                 texto = self.textos["aprobada_vip" if vip else "aprobada"].format(admin=nombre_de(admin))
                 self.dc.editar(self.revision, p["revision_id"], texto + "\n(❌ para quitarla del tendedero)")
+                self.avisar_aprobada(p, bool(vip))
                 self.cambios.append(f"aprobada {'VIP ' if vip else ''}de {p['autor']}")
+
+    def avisar_aprobada(self, p, vip):
+        """Confirmación en el canal público para quien mandó la foto (se borra sola como los otros avisos)."""
+        c = self.cfg["discord"]
+        if not c.get("avisar_aprobada", True):
+            return
+        clave = "aviso_aprobada_vip" if vip else "aviso_aprobada"
+        plantilla = self.textos.get(clave) or self.textos.get("aviso_aprobada")
+        if not plantilla:
+            return
+        uid = p.get("autor_id")
+        mencion = f"<@{uid}>" if uid else f"**{pol.limpiar_nombre(p['autor'])}**"
+        try:
+            aviso = self.dc.enviar(self.envios, plantilla.format(mencion=mencion, autor=pol.limpiar_nombre(p["autor"])),
+                                   menciones=[uid] if uid else None)
+        except DiscordError as e:
+            log(f"::warning::No pude avisar de la foto aprobada: {e}")
+            return
+        if aviso:
+            self.d.estado["avisos"].append({"id": aviso["id"], "borrar": int(self.ahora + 60 * c.get("minutos_aviso", 60))})
 
     # 3 ---------------------------------------------------------
     def revisar_publicadas(self):
