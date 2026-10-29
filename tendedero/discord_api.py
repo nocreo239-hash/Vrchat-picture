@@ -136,8 +136,10 @@ class Discord:
             return r.read()
 
     # ------------------------------------------------------------ escritura
-    def enviar(self, canal, texto, archivo=None, nombre_archivo="foto.jpg", menciones=None):
+    def enviar(self, canal, texto, archivo=None, nombre_archivo="foto.jpg", menciones=None, responde_a=None):
         datos = {"content": texto, "allowed_mentions": {"parse": [], "users": menciones or []}}
+        if responde_a:
+            datos["message_reference"] = {"message_id": responde_a, "fail_if_not_exists": False}
         if archivo is None:
             return self._json("POST", f"/channels/{canal}/messages", datos)
         limite = uuid.uuid4().hex
@@ -155,6 +157,11 @@ class Discord:
         e = urllib.parse.quote(emoji)
         self._pedir("PUT", f"/channels/{canal}/messages/{mensaje_id}/reactions/{e}/@me")
         time.sleep(0.3)  # Discord limita las reacciones a unas 4 por segundo
+
+    def quitar_mi_reaccion(self, canal, mensaje_id, emoji):
+        e = urllib.parse.quote(emoji)
+        self._pedir("DELETE", f"/channels/{canal}/messages/{mensaje_id}/reactions/{e}/@me")
+        time.sleep(0.3)
 
     def editar(self, canal, mensaje_id, texto):
         return self._json("PATCH", f"/channels/{canal}/messages/{mensaje_id}",

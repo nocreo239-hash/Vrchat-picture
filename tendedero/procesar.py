@@ -167,7 +167,9 @@ class Tendedero:
     def recuperar_huerfanas(self):
         """Si una pasada no pudo guardar su estado, sus fotos quedan en revisión sin que el
         tendedero lo sepa. Las busca por el texto de revisión y las vuelve a poner en pendientes."""
-        patron = re.compile("^" + re.escape(self.textos["revision"]).replace(re.escape("{autor}"), "(.+?)") + "$", re.S)
+        # Solo la primera línea del texto: así se reconocen también los mensajes hechos con textos de antes
+        primera = self.textos["revision"].split("\n")[0]
+        patron = re.compile("^" + re.escape(primera).replace(re.escape("{autor}"), "(.+?)") + "(\n|$)", re.S)
         conocidas = {p["revision_id"] for p in self.d.estado["pendientes"]} | {f["revision_id"] for f in self.d.fotos}
         yo = self.dc.quien_soy()["id"]
         for m in self.dc.mensajes_recientes(self.revision):
@@ -190,6 +192,7 @@ class Tendedero:
             if rechazo:
                 self.d.estado["pendientes"].remove(p)
                 self.dc.editar(self.revision, p["revision_id"], self.textos["rechazada"].format(admin=nombre_de(rechazo)))
+                self.confirmar_admin(p, rechazo, "confirma_rechazada", quitar=(APROBAR, VIP, RECHAZAR))
                 self.cambios.append(f"rechazada de {p['autor']}")
             elif vip or ok:
                 admin = vip or ok
@@ -210,7 +213,29 @@ class Tendedero:
                 texto = self.textos["aprobada_vip" if vip else "aprobada"].format(admin=nombre_de(admin))
                 self.dc.editar(self.revision, p["revision_id"], texto + "\n(❌ para quitarla del tendedero)")
                 self.avisar_aprobada(p, bool(vip))
+                self.confirmar_admin(p, admin, "confirma_aprobada_vip" if vip else "confirma_aprobada", quitar=(APROBAR, VIP))
                 self.cambios.append(f"aprobada {'VIP ' if vip else ''}de {p['autor']}")
+
+    def confirmar_admin(self, p, admin, clave, quitar=()):
+        """Le confirma al admin que su reacción se aplicó: responde al mensaje de revisión mencionándolo
+        (le llega notificación) y quita las reacciones del bot que ya no sirven. La respuesta se borra sola."""
+        try:
+            for e in quitar:
+                self.dc.quitar_mi_reaccion(self.revision, p["revision_id"], e)
+        except DiscordError:
+            pass
+        plantilla = self.textos.get(clave)
+        if not plantilla or not self.cfg["discord"].get("confirmar_admin", True):
+            return
+        try:
+            r = self.dc.enviar(self.revision, plantilla.format(mencion=f"<@{admin['id']}>", autor=pol.limpiar_nombre(p["autor"])),
+                               menciones=[admin["id"]], responde_a=p["revision_id"])
+        except DiscordError as e:
+            log(f"::warning::No pude confirmar al admin: {e}")
+            return
+        if r:
+            minutos = self.cfg["discord"].get("minutos_aviso", 60)
+            self.d.estado["avisos"].append({"id": r["id"], "canal": self.revision, "borrar": int(self.ahora + 60 * minutos)})
 
     def avisar_aprobada(self, p, vip):
         """Confirmación en el canal público para quien mandó la foto (se borra sola como los otros avisos)."""
@@ -242,6 +267,7 @@ class Tendedero:
             if quita:
                 self.d.quitar_foto(f)
                 self.dc.editar(self.revision, f["revision_id"], self.textos["quitada"].format(admin=nombre_de(quita)))
+                self.confirmar_admin(f, quita, "confirma_quitada", quitar=(RECHAZAR,))
                 self.cambios.append(f"quitada la de {f['autor']}")
 
     def caducar(self):
@@ -271,7 +297,7 @@ class Tendedero:
         for a in list(self.d.estado["avisos"]):
             if a["borrar"] <= self.ahora:
                 try:
-                    self.dc.borrar(self.envios, a["id"])
+                    self.dc.borrar(a.get("canal", self.envios), a["id"])
                 except DiscordError:
                     pass
                 self.d.estado["avisos"].remove(a)

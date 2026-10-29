@@ -90,7 +90,7 @@ class DiscordFalso:
     def mis_servidores(self): return [{"id": k, "name": v["name"]} for k, v in self.servidores.items()]
     def canales_de(self, servidor): return self.servidores.get(servidor, {}).get("canales", [])
     def descargar(self, url): return self.archivos[url]
-    def enviar(self, canal, texto, archivo=None, nombre_archivo="f.jpg", menciones=None):
+    def enviar(self, canal, texto, archivo=None, nombre_archivo="f.jpg", menciones=None, responde_a=None):
         mid = self._id(); adj = []
         if archivo is not None:
             url = f"https://cdn/rev{mid}.jpg"; self.archivos[url] = archivo
@@ -98,6 +98,9 @@ class DiscordFalso:
         self.canales.setdefault(canal, {})[mid] = {"id": mid, "author": {"id": BOT, "bot": True}, "attachments": adj, "content": texto, "reacciones": {}}
         return {"id": mid}
     def reaccionar(self, canal, mid, emoji): self.reacciona(canal, mid, emoji, BOT)
+    def quitar_mi_reaccion(self, canal, mid, emoji):
+        r = self.canales[canal][mid]["reacciones"]
+        r[emoji] = [u for u in r.get(emoji, []) if u["id"] != BOT]
     def editar(self, canal, mid, texto): self.canales[canal][mid]["content"] = texto
     def borrar(self, canal, mid): self.canales.get(canal, {}).pop(mid, None)
 
@@ -148,6 +151,10 @@ def main():
     assert any("fue aprobada!" in t for t in avisos), avisos
     assert not any("<@73>" in t and "aprobada" in t for t in avisos), "avisó una rechazada"
     assert not any("autor_id" in f for f in tt.d.fotos), "la foto publicada no debe guardar el ID del autor"
+    conf = [m["content"] for m in dc.canales["30"].values() if m["author"].get("bot") and m["content"].startswith("<@" + ADMIN)]
+    assert any("Listo" in t and "VIP" in t for t in conf) and any("rechazada" in t for t in conf), conf
+    vipmsg = dc.canales["30"][ids[1]]["reacciones"]
+    assert not any(u["id"] == BOT for u in vipmsg.get(APROBAR, []) + vipmsg.get(VIP, [])), "no quitó las reacciones del bot"
     print("2 ok: VIP + comunitaria aprobadas (con aviso al autor), rechazo aplicado, el no-admin no cuenta")
 
     # 3) avisos se borran después de 60 min
