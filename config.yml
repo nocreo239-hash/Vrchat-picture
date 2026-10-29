@@ -8,8 +8,8 @@ discord:
   # mudar el tendedero a otro servidor basta con invitar el bot allí y crear estos dos canales.
   # Si están en varios servidores, usa el último al que invitaste el bot.
   servidor: "auto"                       # o el ID de un servidor, para fijarlo
-  canal_envios: "1565236441263382570"    # canal público donde la gente manda su foto
-  canal_revision: "1565236513879490661"  # canal PRIVADO: solo el bot y los admins pueden verlo
+  canal_envios: "manda-tu-polaroid"      # canal público donde la gente manda su foto
+  canal_revision: "revisar-polaroids"     # canal PRIVADO: solo el bot y los admins pueden verlo
   # Quién puede aprobar. Vacío = cualquiera que pueda ver el canal de revisión (por eso tiene que
   # ser privado). Si pones roles, recuerda que cada servidor tiene los suyos.
   roles_admin_ids: []

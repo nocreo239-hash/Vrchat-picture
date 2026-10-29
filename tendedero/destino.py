@@ -49,17 +49,20 @@ def resolver(cfg_discord, dc, log=print):
         if not candidatos:
             raise ErrorDestino("El bot no está en ningún servidor. Invítalo con el enlace de OAuth2 (paso 1 del LEEME).")
 
-    encontrados = []
+    encontrados, vistos = [], []
     for g in candidatos:
         chans = dc.canales_de(g["id"])
         a, b = _buscar(chans, env), _buscar(chans, rev)
         if a and b:
             encontrados.append((g, a, b))
+        nombres = [c.get("name") for c in chans if c.get("type") in TIPOS_TEXTO]
+        vistos.append(f"{g.get('name', g['id'])}: " + ", ".join("#" + n for n in nombres[:25]))
 
     if not encontrados:
         donde = "ese servidor" if serv.isdigit() else f"ninguno de los {len(candidatos)} servidores donde está el bot"
         raise ErrorDestino(f"No encontré los canales '{env}' y '{rev}' en {donde}. "
-                           "Crea los dos canales con esos nombres (o cambia los nombres en config.yml).")
+                           "Crea los dos canales con esos nombres (o cambia los nombres en config.yml). "
+                           "Canales que veo -> " + " | ".join(vistos))
 
     elegido = encontrados[0]
     if len(encontrados) > 1:
