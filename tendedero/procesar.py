@@ -232,8 +232,8 @@ def main():
             with open(salida, "a") as f:
                 f.write("publicar=false\n")
         return
-    t = Tendedero(cfg, Discord(os.environ.get("DISCORD_TOKEN", "")), Datos())
     try:
+        t = Tendedero(cfg, Discord(os.environ.get("DISCORD_TOKEN", "")), Datos())
         publicar, version = t.pasada(RAIZ / "_site")
     except DiscordError as e:
         log(f"::error::{e}")
