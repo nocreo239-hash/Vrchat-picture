@@ -78,6 +78,7 @@ class DiscordFalso:
     def miembro(self, servidor, uid):
         if uid == BOT: return {"roles": [], "joined_at": self.servidores[servidor]["entro"]}
         return self.miembros.get(uid, {"roles": []})
+    def roles(self, servidor): return [{"id": servidor, "permissions": str(1 << 10)}]   # @everyone ve canales
     def mis_servidores(self): return [{"id": k, "name": v["name"]} for k, v in self.servidores.items()]
     def canales_de(self, servidor): return self.servidores.get(servidor, {}).get("canales", [])
     def descargar(self, url): return self.archivos[url]

@@ -29,12 +29,16 @@ def _buscar(canales, valor):
     return None
 
 
-def es_privado(canal, servidor_id):
-    """Privado = @everyone (su rol tiene el mismo ID que el servidor) no puede ver el canal."""
+def es_privado(canal, servidor_id, permisos_everyone=None):
+    """Privado = @everyone (su rol tiene el mismo ID que el servidor) no puede ver el canal:
+    o el canal se lo quita, o el servidor no se lo da y el canal no se lo devuelve."""
     for o in canal.get("permission_overwrites", []):
-        if str(o.get("id")) == str(servidor_id) and int(o.get("deny", 0)) & VER_CANAL:
-            return True
-    return False
+        if str(o.get("id")) == str(servidor_id):
+            if int(o.get("deny", 0)) & VER_CANAL:
+                return True
+            if int(o.get("allow", 0)) & VER_CANAL:
+                return False
+    return permisos_everyone is not None and not (int(permisos_everyone) & VER_CANAL)
 
 
 def resolver(cfg_discord, dc, log=print):
@@ -82,4 +86,11 @@ def resolver(cfg_discord, dc, log=print):
     return {"servidor": g["id"], "nombre_servidor": g.get("name", g["id"]),
             "envios": a["id"], "nombre_envios": a.get("name", a["id"]),
             "revision": b["id"], "nombre_revision": b.get("name", b["id"]),
-            "privado": es_privado(b, g["id"])}
+            "privado": es_privado(b, g["id"], _permisos_everyone(dc, g["id"]))}
+
+
+def _permisos_everyone(dc, servidor_id):
+    for r in dc.roles(servidor_id):
+        if str(r.get("id")) == str(servidor_id):
+            return r.get("permissions", "0")
+    return None

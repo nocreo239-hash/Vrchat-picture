@@ -72,6 +72,9 @@ class Discord:
     def canales_de(self, servidor):
         return self._pedir("GET", f"/guilds/{servidor}/channels") or []
 
+    def roles(self, servidor):
+        return self._pedir("GET", f"/guilds/{servidor}/roles") or []
+
     def servidor(self, servidor_id):
         return self._pedir("GET", f"/guilds/{servidor_id}")
 
