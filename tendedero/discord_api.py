@@ -80,6 +80,15 @@ class Discord:
         """La app del bot: trae quién es su dueño (o los miembros de su equipo)."""
         return self._pedir("GET", "/oauth2/applications/@me") or {}
 
+    def quien_me_anadio(self, servidor, bot_id):
+        """ID de quien añadió el bot al servidor, según el registro de auditoría (dura 45 días)."""
+        q = urllib.parse.urlencode({"action_type": 28, "limit": 50})   # 28 = BOT_ADD
+        datos = self._pedir("GET", f"/guilds/{servidor}/audit-logs?{q}") or {}
+        for e in datos.get("audit_log_entries", []):
+            if str(e.get("target_id")) == str(bot_id):
+                return str(e.get("user_id"))
+        return None
+
     def salir_de(self, servidor):
         self._pedir("DELETE", f"/users/@me/guilds/{servidor}")
 

@@ -86,6 +86,7 @@ class DiscordFalso:
     def aplicacion(self): return {"id": BOT, "owner": {"id": "500"}}
     def servidor(self, sid): return {"id": sid, "owner_id": self.servidores[sid].get("dueno", "500")}
     def salir_de(self, sid): self.servidores.pop(sid, None)
+    def quien_me_anadio(self, sid, bot): return self.servidores[sid].get("anadio")
     def mis_servidores(self): return [{"id": k, "name": v["name"]} for k, v in self.servidores.items()]
     def canales_de(self, servidor): return self.servidores.get(servidor, {}).get("canales", [])
     def descargar(self, url): return self.archivos[url]
@@ -259,6 +260,13 @@ def main():
     tt, _ = pasada(ahora + 18 * 86400 + 120)
     assert tt.servidor == "14" and len(dc.servidores["14"]["canales"]) == 2
     cfg["discord"]["duenos_permitidos"] = []
+    # servidor de otro, pero el bot lo añadió el dueño del bot (es admin ahí) -> vale, y queda recordado
+    dc.servidores["15"] = {"name": "Donde soy admin", "dueno": "888", "anadio": "500", "entro": "2026-12-03T00:00:00", "canales": []}
+    tt, _ = pasada(ahora + 18 * 86400 + 180)
+    assert tt.servidor == "15" and "15" in tt.d.estado["servidores_aprobados"]
+    dc.servidores["15"]["anadio"] = None       # pasaron 45 días: el registro de auditoría ya no lo dice
+    tt, _ = pasada(ahora + 18 * 86400 + 240)
+    assert tt.servidor == "15", "olvidó que ese servidor ya estaba aprobado"
     print("11 ok: candado — servidores ajenos ignorados (o abandonados); los permitidos sí")
 
     # Atlas de muestra para revisar a ojo (con fotos frescas)

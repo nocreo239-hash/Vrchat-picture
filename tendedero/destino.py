@@ -13,7 +13,8 @@ ADMINISTRADOR, GESTIONAR_SERVIDOR = 1 << 3, 1 << 5
 # Lo que el bot necesita dentro del canal privado: ver, escribir, adjuntar, reaccionar, historial, gestionar mensajes
 PERMISOS_BOT = (1 << 10) | (1 << 11) | (1 << 15) | (1 << 6) | (1 << 16) | (1 << 13)
 # Para el enlace de invitación: lo de arriba + Gestionar canales (para crear los dos canales solo)
-PERMISOS_INVITACION = PERMISOS_BOT | (1 << 4)
+# + Ver registro de auditoría (para saber quién lo añadió a un servidor que no es tuyo)
+PERMISOS_INVITACION = PERMISOS_BOT | (1 << 4) | (1 << 7)
 
 
 def enlace_invitacion(app_id):
@@ -50,7 +51,7 @@ def es_privado(canal, servidor_id, permisos_everyone=None):
     return permisos_everyone is not None and not (int(permisos_everyone) & VER_CANAL)
 
 
-def resolver(cfg_discord, dc, log=print):
+def resolver(cfg_discord, dc, log=print, aprobados=None):
     """Devuelve un dict con servidor, canales (ID y nombre) y si el canal de revisión es privado."""
     serv = str(cfg_discord.get("servidor", "auto")).strip()
     env, rev = cfg_discord["canal_envios"], cfg_discord["canal_revision"]
@@ -61,7 +62,7 @@ def resolver(cfg_discord, dc, log=print):
         candidatos = dc.mis_servidores()
         if not candidatos:
             raise ErrorDestino("El bot no está en ningún servidor. Invítalo con el enlace de OAuth2 (paso 1 del LEEME).")
-        candidatos = solo_permitidos(dc, candidatos, cfg_discord, log)
+        candidatos = solo_permitidos(dc, candidatos, cfg_discord, log, aprobados)
         if not candidatos:
             raise ErrorDestino("El bot solo está en servidores de otras personas. Invítalo a un servidor tuyo "
                                "(o añade al dueño en 'duenos_permitidos' de config.yml).")
@@ -170,18 +171,35 @@ def duenos(dc, cfg_discord):
     return ids
 
 
-def solo_permitidos(dc, candidatos, cfg_discord, log):
-    """Candado: con el bot público cualquiera puede añadirlo a su servidor. Esos servidores se ignoran
-    (o el bot se sale, con salir_de_ajenos: true), así nadie se lleva tu tendedero."""
+def solo_permitidos(dc, candidatos, cfg_discord, log, aprobados=None):
+    """Candado: con el bot público cualquiera puede añadirlo a su servidor. Solo valen los servidores
+    cuyo dueño eres tú, o a los que TÚ añadiste el bot (por ejemplo uno donde eres admin). Los demás se
+    ignoran (o el bot se sale, con salir_de_ajenos: true), así nadie se lleva tu tendedero.
+    `aprobados` (un set) recuerda los servidores ya verificados: el registro de auditoría solo dura 45 días."""
+    aprobados = aprobados if aprobados is not None else set()
     permitidos = duenos(dc, cfg_discord)
     if not permitidos:
         log("::warning::No pude saber quién es el dueño del bot; no aplico el candado de servidores.")
         return candidatos
+    yo = dc.quien_soy()["id"]
     buenos = []
     for g in candidatos:
+        if g["id"] in aprobados:
+            buenos.append(g)
+            continue
         info = dc.servidor(g["id"]) or {}
         if str(info.get("owner_id")) in permitidos:
+            aprobados.add(g["id"])
             buenos.append(g)
+            continue
+        try:
+            quien = dc.quien_me_anadio(g["id"], yo)
+        except DiscordError:
+            quien = None   # sin permiso de ver el registro de auditoría
+        if quien in permitidos:
+            aprobados.add(g["id"])
+            buenos.append(g)
+            log(f"::notice::'{g.get('name')}' no es tuyo, pero lo añadiste tú: lo uso.")
             continue
         if cfg_discord.get("salir_de_ajenos"):
             try:
@@ -190,5 +208,7 @@ def solo_permitidos(dc, candidatos, cfg_discord, log):
             except DiscordError as e:
                 log(f"::warning::No pude salir de '{g.get('name')}': {e}")
         else:
-            log(f"::warning::Ignoro '{g.get('name')}': su dueño no eres tú ni nadie de 'duenos_permitidos'.")
+            log(f"::warning::Ignoro '{g.get('name')}': ni su dueño ni quien añadió el bot eres tú (o alguien de "
+                "'duenos_permitidos'). Si lo añadiste tú, invítalo con el enlace que da permiso de ver el registro "
+                "de auditoría.")
     return buenos

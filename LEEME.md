@@ -30,7 +30,7 @@ como Polaroids colgadas en tu mundo de VRChat, con el nombre de quien la mandó 
 3. Entra a **OAuth2 → URL Generator**:
    - En *Scopes* marca **bot**.
    - En *Bot Permissions* marca: **View Channels, Send Messages, Attach Files, Add Reactions,
-     Read Message History, Manage Messages, Manage Channels**.
+     Read Message History, Manage Messages, Manage Channels, View Audit Log**.
    - Copia la URL de abajo, ábrela y añade el bot a tu servidor.
 
 ## Paso 2 — Los canales (0 min)
@@ -85,7 +85,8 @@ Ahí ves cómo se ve el tendedero ahora mismo.
 **Invitarlo desde el propio Discord** (botón *Agregar app* en el perfil del bot): en el portal de
 desarrolladores activa **Bot → Public Bot**, y en **Installation** elige *Install Link: Discord Provided
 Link*, con el scope `bot` y los permisos del paso 1. Es seguro gracias al **candado**: el bot solo trabaja
-en servidores cuyo dueño seas tú. Si alguien lo añade a su servidor, lo ignora (o se sale, con
+en servidores cuyo dueño seas tú **o a los que tú lo añadiste** (por ejemplo, uno donde eres admin; para
+saberlo mira el registro de auditoría, por eso pide *View Audit Log*). Si alguien lo añade a su servidor, lo ignora (o se sale, con
 `salir_de_ajenos: true`). Para permitir el servidor de un amigo, pon su ID de usuario en `duenos_permitidos`.
 
 El bot trabaja en **el último servidor tuyo al que lo invitaste**. Para fijar uno, pon su ID en `servidor`

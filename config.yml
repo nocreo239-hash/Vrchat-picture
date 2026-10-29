@@ -17,7 +17,8 @@ discord:
   # solo lo ven el bot y los roles de administrador). Necesita el permiso "Gestionar canales".
   crear_canales: true
   # Candado: el bot solo trabaja en servidores cuyo dueño seas tú (el dueño del bot en el portal de
-  # Discord). Así puedes hacer el bot público sin que nadie se lleve tu tendedero a su servidor.
+  # Discord) o a los que tú añadiste el bot, aunque sean de otra persona (si eres admin ahí).
+  # Así puedes hacer el bot público sin que nadie se lleve tu tendedero a su servidor.
   # Para permitir servidores de otras personas, pon aquí sus IDs de usuario.
   duenos_permitidos: []
   salir_de_ajenos: false   # true = el bot se sale solo de los servidores que no son tuyos

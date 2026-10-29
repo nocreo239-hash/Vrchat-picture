@@ -86,7 +86,9 @@ class Tendedero:
         self.textos = cfg["textos"]
         self.cambios = []
         c = cfg["discord"]
-        d = destino.resolver(c, discord, log)
+        aprobados = set(datos.estado.get("servidores_aprobados", []))
+        d = destino.resolver(c, discord, log, aprobados)
+        datos.estado["servidores_aprobados"] = sorted(aprobados)
         self.destino = d
         self.servidor, self.envios, self.revision = d["servidor"], d["envios"], d["revision"]
         self.roles_admin = {str(r) for r in c.get("roles_admin_ids", [])}
