@@ -80,6 +80,10 @@ class Discord:
                 break
         return todos
 
+    def mensajes_recientes(self, canal, limite=100):
+        """Los últimos `limite` mensajes del canal (del más nuevo al más viejo)."""
+        return self._pedir("GET", f"/channels/{canal}/messages?limit={limite}") or []
+
     def mensaje(self, canal, mensaje_id):
         return self._pedir("GET", f"/channels/{canal}/messages/{mensaje_id}")
 

@@ -23,6 +23,8 @@ jobs:
       publicar: ${{ steps.pasada.outputs.publicar }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}   # siempre lo último (también al "Re-run" una pasada vieja)
 
       - uses: actions/setup-python@v6
         with:
@@ -45,7 +47,12 @@ jobs:
           git add data
           if ! git diff --cached --quiet; then
             git commit -m "Tendedero: actualizar fotos"
-            git push
+            # Si alguien guardó algo mientras tanto (por ejemplo config.yml), se junta y se reintenta
+            for intento in 1 2 3; do
+              git push && exit 0
+              git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
+            done
+            exit 1
           fi
 
       - name: Preparar la página

@@ -10,6 +10,7 @@ import datetime as dt
 import io
 import json
 import os
+import re
 import sys
 import time
 import uuid
@@ -120,6 +121,22 @@ class Tendedero:
             if c.get("borrar_original", True):
                 self.dc.borrar(self.envios, m["id"])
 
+    def recuperar_huerfanas(self):
+        """Si una pasada no pudo guardar su estado, sus fotos quedan en revisión sin que el
+        tendedero lo sepa. Las busca por el texto de revisión y las vuelve a poner en pendientes."""
+        patron = re.compile("^" + re.escape(self.textos["revision"]).replace(re.escape("{autor}"), "(.+?)") + "$", re.S)
+        conocidas = {p["revision_id"] for p in self.d.estado["pendientes"]} | {f["revision_id"] for f in self.d.fotos}
+        yo = self.dc.quien_soy()["id"]
+        for m in self.dc.mensajes_recientes(self.revision):
+            if m["id"] in conocidas or m["author"]["id"] != yo or not m.get("attachments"):
+                continue
+            coincide = patron.match(m.get("content", ""))
+            if not coincide:
+                continue
+            recibida = ((int(m["id"]) >> 22) + 1420070400000) // 1000  # la fecha va dentro del ID de Discord
+            self.d.estado["pendientes"].append({"revision_id": m["id"], "autor": coincide.group(1), "recibida": recibida})
+            self.cambios.append(f"recuperada la de {coincide.group(1)}")
+
     # 2 ---------------------------------------------------------
     def revisar_pendientes(self):
         for p in list(self.d.estado["pendientes"]):
@@ -194,6 +211,7 @@ class Tendedero:
     # ---------------------------------------------------------
     def pasada(self, salida):
         self.pasar_envios()
+        self.recuperar_huerfanas()
         self.revisar_pendientes()
         self.revisar_publicadas()
         self.caducar()

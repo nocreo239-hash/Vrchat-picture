@@ -34,14 +34,16 @@ class DiscordFalso:
         self.canales = {}       # canal -> {id: msg}
         self.archivos = {}      # url -> bytes
         self.siguiente = 1000
+        self.reloj_ms = 1_800_000_000_000
         self.miembros = {
             ADMIN: {"nick": "Admin Cuervo", "roles": [ADMIN_ROL]},
             NOADMIN: {"nick": None, "roles": []},
         }
 
     def _id(self):
+        # IDs con forma de Discord (llevan la fecha dentro), para probar la recuperación
         self.siguiente += 1
-        return str(self.siguiente)
+        return str(((self.reloj_ms - 1420070400000) << 22) + self.siguiente)
 
     # lo que escribe un usuario
     def usuario_manda(self, canal, uid, nombre, n_fotos=1, texto=""):
@@ -63,6 +65,8 @@ class DiscordFalso:
     def mensajes_despues(self, canal, despues=None):
         ms = sorted(self.canales.get(canal, {}).values(), key=lambda m: int(m["id"]))
         return [m for m in ms if despues is None or int(m["id"]) > int(despues)]
+    def mensajes_recientes(self, canal, limite=100):
+        return sorted(self.canales.get(canal, {}).values(), key=lambda m: -int(m["id"]))[:limite]
     def mensaje(self, canal, mid): return self.canales.get(canal, {}).get(mid)
     def reacciones(self, canal, mid, emoji):
         m = self.mensaje(canal, mid); return list(m["reacciones"].get(emoji, [])) if m else []
@@ -158,6 +162,19 @@ def main():
     tt, _ = pasada(ahora + 15 * 86400)
     assert not tt.d.estado["pendientes"]
     print("6 ok: caducidad de comunitarias (7 d) y pendientes (14 d)")
+
+    # 7) una pasada pierde su estado (no pudo guardar): la foto en revisión se recupera
+    estado = (tmp / "data" / "estado.json").read_text(encoding="utf-8")
+    dc.reloj_ms = (ahora + 15 * 86400) * 1000
+    dc.usuario_manda("20", "300", "Perdida")
+    pasada(ahora + 15 * 86400 + 60)
+    (tmp / "data" / "estado.json").write_text(estado, encoding="utf-8")  # como si no se hubiera guardado
+    tt, _ = pasada(ahora + 15 * 86400 + 120)
+    rec = [p for p in tt.d.estado["pendientes"] if p["autor"] == "Perdida"]
+    assert len(rec) == 1, tt.d.estado["pendientes"]
+    tt, _ = pasada(ahora + 15 * 86400 + 180)
+    assert len([p for p in tt.d.estado["pendientes"] if p["autor"] == "Perdida"]) == 1, "se duplicó"
+    print("7 ok: foto en revisión recuperada tras perder el estado, sin duplicar")
 
     # Atlas de muestra para revisar a ojo (con fotos frescas)
     shutil.rmtree(tmp / "data"); dc2 = DiscordFalso()
