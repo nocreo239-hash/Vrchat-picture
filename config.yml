@@ -6,11 +6,11 @@
 discord:
   # Para copiar estos números: en Discord activa Ajustes > Avanzado > Modo desarrollador,
   # luego clic derecho sobre el servidor / canal / rol > "Copiar ID".
-  servidor_id: "000000000000000000"
-  canal_envios_id: "000000000000000000"     # canal público donde la gente manda su foto
-  canal_revision_id: "000000000000000000"   # canal privado: solo el bot y los admins
+  servidor_id: "1494546930108334200"
+  canal_envios_id: "1565236441263382570"     # canal público donde la gente manda su foto
+  canal_revision_id: "1565236513879490661"   # canal privado: solo el bot y los admins
   roles_admin_ids:                          # roles que pueden aprobar (uno o varios)
-    - "000000000000000000"
+    - "1565238494723313814"
 
   # Borrar la foto del canal público después de pasarla a revisión (recomendado:
   # así nadie ve fotos que todavía no se aprobaron).
