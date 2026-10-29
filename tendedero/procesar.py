@@ -19,6 +19,7 @@ from pathlib import Path
 import yaml
 
 from . import atlas
+from . import destino
 from . import polaroid as pol
 from .discord_api import Discord, DiscordError
 
@@ -44,6 +45,9 @@ class Datos:
         self.estado.setdefault("avisos", [])
         self.estado.setdefault("ultimo_hash", "")
         self.estado.setdefault("ultimo_latido", "")
+        self.estado.setdefault("servidor", "")
+        self.estado.setdefault("canal_envios", "")
+        self.estado.setdefault("canal_revision", "")
 
     def _leer(self, nombre, defecto):
         p = self.dir / nombre
@@ -64,6 +68,11 @@ def nombre_de(usuario, miembro=None):
     return usuario.get("global_name") or usuario.get("username") or "Anónimo"
 
 
+def snowflake(ts):
+    """ID de Discord que corresponde a un instante: los mensajes posteriores tienen IDs mayores."""
+    return str((int(ts * 1000) - 1420070400000) << 22)
+
+
 def es_imagen(adjunto):
     tipo = (adjunto.get("content_type") or "").lower()
     return tipo.startswith("image/") or adjunto.get("filename", "").lower().endswith(TIPOS_IMAGEN)
@@ -74,13 +83,43 @@ class Tendedero:
     def __init__(self, cfg, discord, datos, ahora=None):
         self.cfg, self.dc, self.d = cfg, discord, datos
         self.ahora = ahora if ahora is not None else time.time()
-        c = cfg["discord"]
-        self.servidor, self.envios, self.revision = c["servidor_id"], c["canal_envios_id"], c["canal_revision_id"]
-        self.roles_admin = {str(r) for r in c["roles_admin_ids"]}
         self.textos = cfg["textos"]
         self.cambios = []
+        c = cfg["discord"]
+        d = destino.resolver(c, discord, log)
+        self.destino = d
+        self.servidor, self.envios, self.revision = d["servidor"], d["envios"], d["revision"]
+        self.roles_admin = {str(r) for r in c.get("roles_admin_ids", [])}
+        if not self.roles_admin and not d["privado"]:
+            raise destino.ErrorDestino(
+                f"El canal #{d['nombre_revision']} no es privado y no hay roles de admin en config.yml: "
+                "cualquiera podría aprobar fotos. Quítale 'Ver canal' a @everyone en ese canal.")
+        self._cambio_de_servidor()
+
+    def _cambio_de_servidor(self):
+        """Si config.yml ahora apunta a otro servidor o a otros canales, se empieza limpio ahí
+        sin perder las fotos ya publicadas."""
+        e = self.d.estado
+        # Datos de antes de esta versión: se asume que eran de los canales actuales
+        for x in e["pendientes"] + self.d.fotos:
+            x.setdefault("canal", e["canal_revision"] or self.revision)
+        if e["canal_envios"] and e["canal_envios"] != self.envios:
+            # Solo lo del último día (lo que mandaron mientras lo preparabas), no todo el historial del canal
+            e["ultimo_envio_id"] = snowflake(self.ahora - 86400)
+            e["avisos"] = []
+            self.cambios.append("canal de envíos nuevo")
+        if e["canal_revision"] and e["canal_revision"] != self.revision:
+            if e["pendientes"]:
+                self.cambios.append(f"{len(e['pendientes'])} pendientes del canal anterior descartadas")
+            e["pendientes"] = []
+        if e["servidor"] and e["servidor"] != self.servidor:
+            self.cambios.append(f"ahora en el servidor {self.destino['nombre_servidor']}")
+        e["servidor"], e["canal_envios"], e["canal_revision"] = self.servidor, self.envios, self.revision
 
     def es_admin(self, usuario_id):
+        # Sin roles en config.yml: vale cualquiera que pueda ver el canal de revisión (que es privado).
+        if not self.roles_admin:
+            return True
         m = self.dc.miembro(self.servidor, usuario_id)
         return bool(m) and bool(self.roles_admin & set(m.get("roles", [])))
 
@@ -111,7 +150,8 @@ class Tendedero:
                 rev = self.dc.enviar(self.revision, texto, datos, a.get("filename") or "foto.jpg")
                 for e in (APROBAR, VIP, RECHAZAR):
                     self.dc.reaccionar(self.revision, rev["id"], e)
-                self.d.estado["pendientes"].append({"revision_id": rev["id"], "autor": autor, "recibida": int(self.ahora)})
+                self.d.estado["pendientes"].append({"revision_id": rev["id"], "autor": autor, "recibida": int(self.ahora),
+                                                    "canal": self.revision})
                 self.cambios.append(f"recibida de {autor}")
             if c.get("avisar_recibida", True):
                 aviso = self.dc.enviar(self.envios, self.textos["aviso_recibida"].format(mencion=f"<@{m['author']['id']}>"),
@@ -134,7 +174,8 @@ class Tendedero:
             if not coincide:
                 continue
             recibida = ((int(m["id"]) >> 22) + 1420070400000) // 1000  # la fecha va dentro del ID de Discord
-            self.d.estado["pendientes"].append({"revision_id": m["id"], "autor": coincide.group(1), "recibida": recibida})
+            self.d.estado["pendientes"].append({"revision_id": m["id"], "autor": coincide.group(1), "recibida": recibida,
+                                                "canal": self.revision})
             self.cambios.append(f"recuperada la de {coincide.group(1)}")
 
     # 2 ---------------------------------------------------------
@@ -160,7 +201,7 @@ class Tendedero:
                 self.d.fotos.append({
                     "id": archivo[:-4], "archivo": archivo, "autor": pol.limpiar_nombre(p["autor"]),
                     "tipo": "vip" if vip else "comunidad", "aprobada": int(self.ahora),
-                    "revision_id": p["revision_id"],
+                    "revision_id": p["revision_id"], "canal": self.revision,
                 })
                 self.d.estado["pendientes"].remove(p)
                 texto = self.textos["aprobada_vip" if vip else "aprobada"].format(admin=nombre_de(admin))
@@ -171,6 +212,8 @@ class Tendedero:
     def revisar_publicadas(self):
         """Un admin puede quitar una foto ya publicada reaccionando ❌ en su mensaje de revisión."""
         for f in list(self.d.fotos):
+            if f.get("canal", self.revision) != self.revision:
+                continue   # se aprobó en otro servidor: ya no se puede quitar con ❌, solo caduca
             quita = self.primer_admin(self.dc.reacciones(self.revision, f["revision_id"], RECHAZAR))
             if quita:
                 self.d.quitar_foto(f)
@@ -185,10 +228,11 @@ class Tendedero:
         for i, f in enumerate(com):
             if f["aprobada"] < limite or i < sobran:
                 self.d.quitar_foto(f)
-                try:
-                    self.dc.editar(self.revision, f["revision_id"], self.textos["caducada"])
-                except DiscordError:
-                    pass
+                if f.get("canal", self.revision) == self.revision:
+                    try:
+                        self.dc.editar(self.revision, f["revision_id"], self.textos["caducada"])
+                    except DiscordError:
+                        pass
                 self.cambios.append(f"caducó la de {f['autor']}")
         limite_p = self.ahora - t["dias_pendiente"] * 86400
         for p in list(self.d.estado["pendientes"]):
@@ -228,14 +272,20 @@ class Tendedero:
 
 def cargar_config(ruta=RAIZ / "config.yml"):
     cfg = yaml.safe_load(Path(ruta).read_text(encoding="utf-8"))
-    for k in ("servidor_id", "canal_envios_id", "canal_revision_id"):
-        v = str(cfg["discord"].get(k, ""))
-        if not v.isdigit() or set(v) == {"0"}:
-            raise SystemExit(f"Falta poner '{k}' en config.yml (copia el ID desde Discord con el Modo desarrollador).")
-        cfg["discord"][k] = v
-    cfg["discord"]["roles_admin_ids"] = [str(r) for r in cfg["discord"].get("roles_admin_ids", []) if str(r).strip("0")]
-    if not cfg["discord"]["roles_admin_ids"]:
-        raise SystemExit("Falta poner al menos un rol en 'roles_admin_ids' en config.yml.")
+    c = cfg["discord"]
+    # Nombres de antes (con _id) siguen valiendo
+    for viejo, nuevo in (("servidor_id", "servidor"), ("canal_envios_id", "canal_envios"), ("canal_revision_id", "canal_revision")):
+        if viejo in c and nuevo not in c:
+            c[nuevo] = c.pop(viejo)
+    c["servidor"] = str(c.get("servidor") or "auto").strip()
+    if set(c["servidor"]) == {"0"}:
+        c["servidor"] = "auto"
+    for k in ("canal_envios", "canal_revision"):
+        v = str(c.get(k) or "").strip()
+        if not v or set(v) == {"0"}:
+            raise SystemExit(f"Falta poner '{k}' en config.yml (el nombre del canal, por ejemplo manda-tu-polaroid).")
+        c[k] = v
+    c["roles_admin_ids"] = [str(r) for r in (c.get("roles_admin_ids") or []) if str(r).strip("0 ")]
     return cfg
 
 
@@ -256,6 +306,9 @@ def main():
     except DiscordError as e:
         log(f"::error::{e}")
         sys.exit(1)
+    d = t.destino
+    log(f"::notice::Servidor '{d['nombre_servidor']}' · envíos #{d['nombre_envios']} · revisión #{d['nombre_revision']}"
+        f"{' (privado)' if d['privado'] else ''} · cambios: {', '.join(t.cambios) or 'ninguno'}")
     log("Cambios:", ", ".join(t.cambios) or "ninguno", "| versión", version, "| publicar:", publicar)
     if salida:
         with open(salida, "a") as f:

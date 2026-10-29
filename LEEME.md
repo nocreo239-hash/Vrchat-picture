@@ -33,13 +33,14 @@ como Polaroids colgadas en tu mundo de VRChat, con el nombre de quien la mandó 
      Read Message History, Manage Messages**.
    - Copia la URL de abajo, ábrela y añade el bot a tu servidor.
 
-## Paso 2 — Preparar los canales (3 min)
+## Paso 2 — Preparar los canales (2 min)
 
-1. Crea un canal público, por ejemplo `#manda-tu-polaroid`.
-2. Crea un canal privado, por ejemplo `#revision-polaroids`. En sus permisos, quita *Ver canal* a
-   `@everyone` y dáselo solo al rol de admins y al bot.
-3. Activa el modo desarrollador en Discord: **Ajustes de usuario → Avanzado → Modo desarrollador**.
-4. Con clic derecho → **Copiar ID**, copia y guarda: el ID del servidor, de los dos canales y del rol de admins.
+1. Crea un canal público llamado `manda-tu-polaroid`.
+2. Crea un canal privado llamado `revision-polaroids`: en sus permisos, quita *Ver canal* a
+   `@everyone` y dáselo solo a tus admins y al bot. **Quien pueda ver este canal puede aprobar fotos.**
+
+No hace falta copiar ningún ID: el bot encuentra los canales por su nombre. Si prefieres otros nombres,
+cámbialos en `config.yml`.
 
 ## Paso 3 — Crear tu repositorio en GitHub (5 min)
 
@@ -51,11 +52,10 @@ como Polaroids colgadas en tu mundo de VRChat, con el nombre de quien la mandó 
    - Nombre: `DISCORD_TOKEN`
    - Valor: el token del bot del paso 1.
 
-## Paso 4 — Configurar (3 min)
+## Paso 4 — Configurar (1 min, opcional)
 
-1. En tu repositorio, abre `config.yml` y pulsa el lápiz para editarlo.
-2. Pega los IDs del paso 2 en `servidor_id`, `canal_envios_id`, `canal_revision_id` y `roles_admin_ids`.
-3. Si quieres, cambia los textos y los colores. Pulsa **Commit changes**.
+Si usaste los nombres de canal de arriba, no tienes que tocar nada. En `config.yml` puedes cambiar los
+textos, los colores, cuántas pinzas hay y cada cuánto rotan. Pulsa el lápiz para editar y **Commit changes**.
 
 Al guardar, el tendedero se ejecuta solo. Para comprobarlo, entra a la pestaña **Actions**: debe aparecer
 "Tendedero" en verde. Después abre:
@@ -74,6 +74,15 @@ Ahí ves cómo se ve el tendedero ahora mismo.
 4. Pulsa **Crear tendedero en la escena**, muévelo a su sitio (la flecha azul mira hacia la gente) y sube el mundo.
 
 ---
+
+## Mudar el tendedero a otro servidor
+
+1. Invita el bot al servidor nuevo con el mismo enlace del paso 1.
+2. Crea ahí los dos canales del paso 2, con los mismos nombres.
+3. Listo: en la siguiente pasada el bot trabaja en el servidor nuevo. Las fotos ya colgadas se quedan.
+
+Si el bot está en varios servidores que tienen esos canales, usa **el último al que lo invitaste**.
+Para fijar uno, pon su ID en `servidor` en `config.yml`.
 
 ## Ajustes útiles (`config.yml`)
 

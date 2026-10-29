@@ -65,6 +65,16 @@ class Discord:
             self.yo = self._pedir("GET", "/users/@me")
         return self.yo
 
+    def mis_servidores(self):
+        """Servidores donde está el bot."""
+        return self._pedir("GET", "/users/@me/guilds?limit=200") or []
+
+    def canales_de(self, servidor):
+        return self._pedir("GET", f"/guilds/{servidor}/channels") or []
+
+    def servidor(self, servidor_id):
+        return self._pedir("GET", f"/guilds/{servidor_id}")
+
     def mensajes_despues(self, canal, despues_de=None):
         """Todos los mensajes posteriores a `despues_de`, del más viejo al más nuevo."""
         todos, desde = [], despues_de or "0"

@@ -39,6 +39,11 @@ class DiscordFalso:
             ADMIN: {"nick": "Admin Cuervo", "roles": [ADMIN_ROL]},
             NOADMIN: {"nick": None, "roles": []},
         }
+        privado = [{"id": "10", "type": 0, "deny": str(1 << 10), "allow": "0"}]
+        # servidor -> canales; y cuándo entró el bot a cada uno
+        self.servidores = {"10": {"name": "Cuervos", "entro": "2026-01-01T00:00:00",
+                                  "canales": [{"id": "20", "type": 0, "name": "manda-tu-polaroid"},
+                                              {"id": "30", "type": 0, "name": "revision-polaroids", "permission_overwrites": privado}]}}
 
     def _id(self):
         # IDs con forma de Discord (llevan la fecha dentro), para probar la recuperación
@@ -70,7 +75,11 @@ class DiscordFalso:
     def mensaje(self, canal, mid): return self.canales.get(canal, {}).get(mid)
     def reacciones(self, canal, mid, emoji):
         m = self.mensaje(canal, mid); return list(m["reacciones"].get(emoji, [])) if m else []
-    def miembro(self, servidor, uid): return self.miembros.get(uid, {"roles": []})
+    def miembro(self, servidor, uid):
+        if uid == BOT: return {"roles": [], "joined_at": self.servidores[servidor]["entro"]}
+        return self.miembros.get(uid, {"roles": []})
+    def mis_servidores(self): return [{"id": k, "name": v["name"]} for k, v in self.servidores.items()]
+    def canales_de(self, servidor): return self.servidores.get(servidor, {}).get("canales", [])
     def descargar(self, url): return self.archivos[url]
     def enviar(self, canal, texto, archivo=None, nombre_archivo="f.jpg", menciones=None):
         mid = self._id(); adj = []
@@ -86,7 +95,8 @@ class DiscordFalso:
 
 def main():
     cfg = yaml.safe_load((RAIZ / "config.yml").read_text(encoding="utf-8"))
-    cfg["discord"].update(servidor_id="10", canal_envios_id="20", canal_revision_id="30", roles_admin_ids=[ADMIN_ROL])
+    cfg["discord"].update(servidor="auto", canal_envios="manda-tu-polaroid", canal_revision="#Revision Polaroids", roles_admin_ids=[ADMIN_ROL])
+    for k in ("servidor_id", "canal_envios_id", "canal_revision_id"): cfg["discord"].pop(k, None)
     tmp = Path(tempfile.mkdtemp())
     dc = DiscordFalso()
     ahora = 1_800_000_000
@@ -175,6 +185,43 @@ def main():
     tt, _ = pasada(ahora + 15 * 86400 + 180)
     assert len([p for p in tt.d.estado["pendientes"] if p["autor"] == "Perdida"]) == 1, "se duplicó"
     print("7 ok: foto en revisión recuperada tras perder el estado, sin duplicar")
+
+    # 8) mudanza: invitan el bot a otro servidor con los mismos canales -> se va al nuevo
+    dc.reloj_ms = (ahora + 16 * 86400) * 1000
+    dc.usuario_manda("20", "400", "Vieja")
+    tt, _ = pasada(ahora + 16 * 86400)
+    dc.reacciona("30", [p for p in tt.d.estado["pendientes"] if p["autor"] == "Vieja"][0]["revision_id"], APROBAR, ADMIN)
+    tt, _ = pasada(ahora + 16 * 86400 + 60)
+    assert any(f["autor"] == "Vieja" for f in tt.d.fotos)
+    dc.usuario_manda("20", "401", "Pendiente vieja")
+    tt, _ = pasada(ahora + 16 * 86400 + 90)
+    privado2 = [{"id": "11", "type": 0, "deny": str(1 << 10), "allow": "0"}]
+    dc.servidores["11"] = {"name": "Otro", "entro": "2026-06-01T00:00:00",
+                           "canales": [{"id": "21", "type": 0, "name": "manda-tu-polaroid"},
+                                       {"id": "31", "type": 0, "name": "revision-polaroids", "permission_overwrites": privado2}]}
+    dc.usuario_manda("21", "402", "Nueva")
+    tt, _ = pasada(ahora + 16 * 86400 + 120)
+    assert tt.servidor == "11" and tt.revision == "31", (tt.servidor, tt.revision)
+    assert [p["autor"] for p in tt.d.estado["pendientes"]] == ["Nueva"], tt.d.estado["pendientes"]
+    assert any(f["autor"] == "Vieja" for f in tt.d.fotos), "se perdió la foto del servidor anterior"
+    # ❌ en el servidor viejo ya no se consulta (el bot pudo haber salido de ahí)
+    dc.reacciona("30", [f for f in tt.d.fotos if f["autor"] == "Vieja"][0]["revision_id"], RECHAZAR, ADMIN)
+    tt, _ = pasada(ahora + 16 * 86400 + 180)
+    assert any(f["autor"] == "Vieja" for f in tt.d.fotos)
+    print("8 ok: mudanza al servidor nuevo sin perder fotos; pendientes viejas descartadas")
+
+    # 9) sin roles y canal de revisión público -> no arranca (cualquiera podría aprobar)
+    import copy
+    from tendedero.destino import ErrorDestino
+    cfg2 = copy.deepcopy(cfg); cfg2["discord"]["roles_admin_ids"] = []
+    dc.servidores["11"]["canales"][1]["permission_overwrites"] = []
+    try:
+        Tendedero(cfg2, dc, Datos(tmp), ahora=ahora); raise AssertionError("debía negarse")
+    except ErrorDestino as e:
+        assert "no es privado" in str(e)
+    dc.servidores["11"]["canales"][1]["permission_overwrites"] = privado2
+    Tendedero(cfg2, dc, Datos(tmp), ahora=ahora)   # privado y sin roles: vale
+    print("9 ok: sin roles solo funciona si el canal de revisión es privado")
 
     # Atlas de muestra para revisar a ojo (con fotos frescas)
     shutil.rmtree(tmp / "data"); dc2 = DiscordFalso()
