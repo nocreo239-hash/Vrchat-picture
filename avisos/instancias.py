@@ -214,23 +214,28 @@ def main():
     cfg["avisos"] = a
     f = _fernet(usuario, contrasena, secreto)
     estado = json.loads(ESTADO.read_text(encoding="utf-8")) if ESTADO.exists() else {}
+    # VRChat no deja reutilizar la sesión desde otra IP (cada pasada de GitHub es otra máquina),
+    # así que cada revisión es un inicio de sesión: no más de uno cada X minutos.
+    ahora = dt.datetime.now(dt.timezone.utc)
+    minimo = float(a.get("minutos_entre_revisiones", 15))
+    try:
+        ultima = dt.datetime.fromisoformat(estado.get("ultima_revision", ""))
+    except ValueError:
+        ultima = None
+    if ultima and (ahora - ultima).total_seconds() < minimo * 60 - 30:
+        log(f"Avisos: la última revisión fue hace menos de {minimo:g} min; salto esta pasada.")
+        return
+    estado["ultima_revision"] = ahora.isoformat()
     vr = VRChat(usuario, contrasena, secreto, leer_sesion(f))
     try:
         nueva = vr.entrar(log)
         if nueva:
-            log("::notice::Sesión de VRChat iniciada (se reutiliza en las próximas pasadas).")
+            log("Avisos: sesión de VRChat iniciada.")
         guardar_sesion(f, vr.cookies)
         pasada(cfg, vr, Discord(os.environ.get("DISCORD_TOKEN", "")), estado)
     except (VRChatError, DiscordError) as e:
         log(f"::warning::Avisos de instancias: {e}")
     finally:
-        log(f"::notice::Cookies recibidas en la pasada: {' '.join(vr.vistas) or 'ninguna'} · "
-            f"al final: {vr._resumen_cookies()}")
-        try:
-            ok = bool((vr._pedir("GET", "/auth/user") or {}).get("id"))
-        except VRChatError as e:
-            ok = f"no ({str(e)[:80]})"
-        log(f"::notice::¿La sesión sigue viva al terminar? {ok}")
         guardar_sesion(f, vr.cookies)
         ESTADO.write_text(json.dumps(estado, indent=1), encoding="utf-8")
 

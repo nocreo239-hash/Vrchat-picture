@@ -95,7 +95,6 @@ class VRChat:
         """Usa la sesión guardada si sigue viva; si no, inicia sesión con 2FA.
         Devuelve True si tuvo que iniciar sesión con contraseña."""
         if "auth" in self.cookies:
-            log(f"::notice::Sesión guardada: cookies {self._resumen_cookies()}")
             try:
                 r = self._pedir("GET", "/auth/user") or {}
                 if r.get("id"):
@@ -109,9 +108,9 @@ class VRChat:
                             self.yo = r
                             log("::notice::Sesión guardada reutilizada (solo pidió el 2FA).")
                             return False
-                log(f"::notice::Sesión guardada rechazada: {str(r)[:120]}")
+                log(f"Sesión guardada rechazada: {str(r)[:120]}")
             except VRChatError as e:
-                log(f"::notice::Sesión guardada no válida: {str(e)[:160]}")
+                log(f"Sesión guardada no válida (normal si cambió la IP): {str(e)[:120]}")
         self.cookies = {}
         r = self._pedir("GET", "/auth/user", auth_basica=True) or {}
         metodos = r.get("requiresTwoFactorAuth") or []
@@ -127,7 +126,6 @@ class VRChat:
         if not r.get("id"):
             raise VRChatError("No pude iniciar sesión en VRChat con la cuenta del bot.")
         self.yo = r
-        log(f"::notice::Sesión nueva: cookies {self._resumen_cookies()}")
         return True
 
     def _verificar_2fa(self):
