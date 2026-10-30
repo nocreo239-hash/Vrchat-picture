@@ -47,12 +47,12 @@ def _fernet(usuario, contrasena, totp):
 
 def leer_sesion(f):
     if not SESION.exists():
-        log("No hay sesión guardada todavía.")
+        log("::notice::No hay sesión guardada todavía.")
         return {}
     try:
         return json.loads(f.decrypt(SESION.read_bytes()))
     except Exception as e:
-        log(f"No pude descifrar la sesión guardada ({type(e).__name__}); inicio sesión de nuevo.")
+        log(f"::notice::No pude descifrar la sesión guardada ({type(e).__name__}); inicio sesión de nuevo.")
         return {}
 
 
