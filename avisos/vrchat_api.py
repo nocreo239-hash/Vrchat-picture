@@ -81,13 +81,17 @@ class VRChat:
                     self.cookies[k] = m.value
 
     # ------------------------------------------------------------ sesión
-    def sesion_valida(self):
+    def sesion_valida(self, log=print):
         if "auth" not in self.cookies:
+            log(f"Sesión guardada: sin cookie auth (tengo: {', '.join(self.cookies) or 'nada'})")
             return False
         try:
             r = self._pedir("GET", "/auth")
+            if not (r and r.get("ok")):
+                log(f"Sesión guardada rechazada: {str(r)[:120]}")
             return bool(r and r.get("ok"))
-        except VRChatError:
+        except VRChatError as e:
+            log(f"Sesión guardada no válida: {str(e)[:160]}")
             return False
 
     def entrar(self):
