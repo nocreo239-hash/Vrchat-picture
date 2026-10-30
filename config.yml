@@ -72,3 +72,13 @@ textos:
   pendiente_caducada: "⌛ Nadie la revisó a tiempo"
   invitacion_titulo: "¡Tu foto aquí!"
   invitacion_texto: "Mándala en Discord"
+
+# Avisos de instancias: el bot te escribe en Discord cuando se abre una instancia de tu mundo.
+# Necesita una cuenta secundaria de VRChat, en tu grupo y con permiso de ver el registro del grupo,
+# guardada en los secretos VRC_USUARIO, VRC_CONTRASENA y VRC_TOTP (ver LEEME).
+avisos:
+  activado: true
+  canal: "avisos-instancias"        # canal privado que crea el bot en el servidor del tendedero
+  mundo_id: "wrld_b4d8a3fb-3e60-4305-8294-6a70cae985b6"   # Cuervos Club
+  grupo_nombre: "cuervos"           # el bot busca entre sus grupos el que contenga esto
+  grupo_id: ""                      # o pon el ID (grp_...) para fijarlo

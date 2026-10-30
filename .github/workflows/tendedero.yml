@@ -39,6 +39,15 @@ jobs:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: python -m tendedero.procesar
 
+      - name: Avisos de instancias de VRChat
+        continue-on-error: true       # si VRChat falla, el tendedero sigue igual
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          VRC_USUARIO: ${{ secrets.VRC_USUARIO }}
+          VRC_CONTRASENA: ${{ secrets.VRC_CONTRASENA }}
+          VRC_TOTP: ${{ secrets.VRC_TOTP }}
+        run: python -m avisos.instancias
+
       - name: Guardar fotos y estado
         run: |
           git config user.name "tendedero-bot"

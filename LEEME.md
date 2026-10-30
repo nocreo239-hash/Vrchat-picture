@@ -122,3 +122,29 @@ tendedero hace un pequeño guardado diario para evitarlo. Si aun así se pausa, 
 
 Fuente de los nombres: [Caveat](https://fonts.google.com/specimen/Caveat), licencia SIL Open Font License
 (incluida en `fuentes/Caveat-OFL.txt`).
+
+## Avisos de instancias (opcional)
+
+El bot puede escribir en un canal privado de Discord (`#avisos-instancias`, lo crea solo) cada vez que
+se abre una instancia de tu mundo:
+
+- **De grupo:** dice quién la abrió y de qué tipo es (Grupo+, solo miembros…).
+- **Pública:** avisa que hay una nueva y cuánta gente tiene (VRChat no dice quién la abrió).
+- Las Friends / Invite de otras personas no se pueden ver: son privadas.
+
+Usa una **cuenta secundaria de VRChat** (nunca la principal):
+
+1. Entra con esa cuenta en vrchat.com → Settings → **Two-Factor Authentication** → activa la app
+   autenticadora. Cuando salga el código QR, pulsa la opción para escribir la clave a mano y **copia esa
+   clave** (letras y números). Termina de activarla con tu app autenticadora como siempre.
+2. Mete esa cuenta en tu grupo y dale un rol con permiso de **ver el registro** (audit log).
+3. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**, crea tres:
+   - `VRC_USUARIO`: el usuario o correo de la cuenta secundaria
+   - `VRC_CONTRASENA`: su contraseña
+   - `VRC_TOTP`: la clave del paso 1
+
+La sesión de VRChat se guarda cifrada en `data/vrc_sesion.enc` para no iniciar sesión en cada pasada.
+En el repositorio solo quedan huellas, nunca nombres ni IDs de instancia. Se apaga con
+`avisos: activado: false` en `config.yml`.
+
+Los avisos salen en cada pasada del bot: si GitHub tarda en lanzar las pasadas programadas, llegan tarde.
