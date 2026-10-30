@@ -224,6 +224,13 @@ def main():
     except (VRChatError, DiscordError) as e:
         log(f"::warning::Avisos de instancias: {e}")
     finally:
+        log(f"::notice::Cookies recibidas en la pasada: {' '.join(vr.vistas) or 'ninguna'} · "
+            f"al final: {vr._resumen_cookies()}")
+        try:
+            ok = bool((vr._pedir("GET", "/auth/user") or {}).get("id"))
+        except VRChatError as e:
+            ok = f"no ({str(e)[:80]})"
+        log(f"::notice::¿La sesión sigue viva al terminar? {ok}")
         guardar_sesion(f, vr.cookies)
         ESTADO.write_text(json.dumps(estado, indent=1), encoding="utf-8")
 

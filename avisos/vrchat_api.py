@@ -42,6 +42,7 @@ class VRChat:
         self.cookies = dict(cookies or {})
         self.pausa = pausa      # entre llamadas: la API limita a pocas por segundo
         self.yo = None
+        self.vistas = []        # diagnóstico: qué cookies mandó VRChat (solo nombre y largo)
 
     # ------------------------------------------------------------ base
     def _pedir(self, metodo, ruta, cuerpo=None, auth_basica=False):
@@ -80,6 +81,7 @@ class VRChat:
             k, v = par.split("=", 1)
             k, v = k.strip(), v.strip().strip('"')
             if k in ("auth", "twoFactorAuth"):
+                self.vistas.append(f"{k}({len(v)}{'=' if self.cookies.get(k) == v else '*'})")
                 if v:
                     self.cookies[k] = v
                 else:
