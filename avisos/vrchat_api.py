@@ -143,5 +143,8 @@ class VRChat:
     def instancias_grupo(self, grupo_id):
         return self._pedir("GET", f"/groups/{grupo_id}/instances") or []
 
+    def grupo(self, grupo_id):
+        return self._pedir("GET", f"/groups/{grupo_id}") or {}
+
     def mundo(self, mundo_id):
         return self._pedir("GET", f"/worlds/{mundo_id}") or {}

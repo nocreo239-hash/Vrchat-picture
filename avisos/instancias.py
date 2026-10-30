@@ -171,12 +171,25 @@ def pasada(cfg, vr, dc, estado, ahora=None, log=log):
         m = vr.mundo(mundo_id)
         for inst in m.get("instances") or []:
             iid, gente = (inst[0], inst[1]) if isinstance(inst, list) else (inst.get("id"), inst.get("n_users"))
-            if "~" in str(iid) and "group(" not in str(iid):
-                continue   # solo las públicas de verdad (sin ~)
+            iid = str(iid)
+            g = re.search(r"group\((grp_[\w-]+)\)", iid)
+            if re.search(r"~(private|friends|hidden)\(", iid):
+                continue   # Friends / Friends+ / Invite: privadas
+            if g and g.group(1) == grupo_id:
+                continue   # las de tu grupo ya salen del registro, con quién la abrió
             h = huella(iid)
             publicas_ahora.add(h)
-            if h not in publicas_antes and not primera:
-                mensajes.append(f"🌐 Se abrió una instancia **pública** · {gente} {'persona' if gente == 1 else 'personas'}")
+            if h in publicas_antes or primera:
+                continue
+            n = f"{gente} {'persona' if gente == 1 else 'personas'}"
+            if g:
+                try:
+                    nombre = (vr.grupo(g.group(1)) or {}).get("name") or "otro grupo"
+                except VRChatError:
+                    nombre = "otro grupo"
+                mensajes.append(f"🔷 Instancia del grupo **{nombre}** en tu mundo · {describir(iid) or 'de grupo'} · {n}")
+            else:
+                mensajes.append(f"🌐 Se abrió una instancia **pública** · {describir(iid) or 'sin región'} · {n}")
         if m:
             resumen = (f"👥 Ahora en Cuervos Club: **{m.get('occupants', 0)}** "
                        f"({m.get('publicOccupants', 0)} en públicas, {m.get('privateOccupants', 0)} en privadas o de grupo)")

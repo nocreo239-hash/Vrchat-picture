@@ -24,6 +24,9 @@ class VRFalso:
         assert g == "grp_cuervos"
         return self.registro
 
+    def grupo(self, g):
+        return {"name": "Hipnotic"}
+
     def mundo(self, m):
         return {"instances": self.instancias, "occupants": 7, "publicOccupants": 4, "privateOccupants": 3}
 
@@ -59,9 +62,12 @@ def main():
     vr.registro.append(entrada(3, "Otro mundo", 1, mundo="wrld_otro"))
     vr.registro.append({"id": "gaud_4", "eventType": "group.member.join", "actorDisplayName": "X",
                         "created_at": AHORA.isoformat()})
-    vr.instancias = [["11111", 3], ["22222", 1], ["33333~private(usr_x)", 2]]
+    vr.instancias = [["11111", 3], ["22222~region(us)", 1], ["33333~private(usr_x)", 2],
+                     ["44444~group(grp_cuervos)~groupAccessType(public)", 5],
+                     ["55555~group(grp_otro)~groupAccessType(public)~region(eu)", 4]]
     m = av.pasada(cfg, vr, dc, estado, AHORA, log=lambda *a: None)
-    assert len(m) == 2, m
+    assert len(m) == 3, m
+    assert "**Hipnotic**" in m[2] and "región EU" in m[2] and "4 personas" in m[2], m[2]
     assert "**Lostkiller** abrió una instancia Grupo+ · región US" in m[0], m[0]
     assert "pública" in m[1] and "1 persona" in m[1], m[1]
     assert "Ahora en Cuervos Club: **7**" in dc.mensajes[-1][1]
