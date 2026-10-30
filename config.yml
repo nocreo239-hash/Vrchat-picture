@@ -73,7 +73,7 @@ textos:
   invitacion_titulo: "¡Tu foto aquí!"
   invitacion_texto: "Mándala en Discord"
 
-# Avisos de instancias: el bot te escribe en Discord cuando se abre una instancia de tu mundo.
+# Avisos de instancias: el bot te escribe en Discord cuando se abre una instancia de tu mundo (Cuervos Club).
 # Necesita una cuenta secundaria de VRChat, en tu grupo y con permiso de ver el registro del grupo,
 # guardada en los secretos VRC_USUARIO, VRC_CONTRASENA y VRC_TOTP (ver LEEME).
 avisos:
