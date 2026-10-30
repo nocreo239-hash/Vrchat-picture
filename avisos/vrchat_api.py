@@ -13,7 +13,6 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from http.cookies import SimpleCookie
 
 API = "https://api.vrchat.cloud/api/1"
 AGENTE = "CuervosClubAvisos/1.0 (bot de avisos de instancias; contacto: allan_martian en VRChat)"
@@ -73,33 +72,44 @@ class VRChat:
             raise VRChatError(f"VRChat {e.code} en {metodo} {ruta}: {texto}")
 
     def _guardar_cookies(self, cabeceras):
+        # A mano: SimpleCookie descarta en silencio cookies con atributos nuevos (p. ej. "Partitioned")
         for c in cabeceras:
-            sc = SimpleCookie()
-            sc.load(c)
-            for k, m in sc.items():
-                if k in ("auth", "twoFactorAuth"):
-                    self.cookies[k] = m.value
+            par = c.split(";", 1)[0].strip()
+            if "=" not in par:
+                continue
+            k, v = par.split("=", 1)
+            k, v = k.strip(), v.strip().strip('"')
+            if k in ("auth", "twoFactorAuth"):
+                if v:
+                    self.cookies[k] = v
+                else:
+                    self.cookies.pop(k, None)   # VRChat la borró
 
     # ------------------------------------------------------------ sesión
-    def sesion_valida(self, log=print):
-        if "auth" not in self.cookies:
-            log(f"::notice::Sesión guardada: sin cookie auth (tengo: {', '.join(self.cookies) or 'nada'})")
-            return False
-        try:
-            r = self._pedir("GET", "/auth")
-            if not (r and r.get("ok")):
-                log(f"::notice::Sesión guardada rechazada: {str(r)[:120]}")
-            return bool(r and r.get("ok"))
-        except VRChatError as e:
-            log(f"::notice::Sesión guardada no válida: {str(e)[:160]}")
-            return False
+    def _resumen_cookies(self):
+        return ", ".join(f"{k}({len(v)})" for k, v in self.cookies.items()) or "ninguna"
 
-    def entrar(self):
-        """Usa la sesión guardada si sigue viva; si no, inicia sesión con 2FA."""
-        if self.sesion_valida():
-            self.yo = self._pedir("GET", "/auth/user")
-            if self.yo and self.yo.get("id"):
-                return False   # no hizo falta iniciar sesión
+    def entrar(self, log=print):
+        """Usa la sesión guardada si sigue viva; si no, inicia sesión con 2FA.
+        Devuelve True si tuvo que iniciar sesión con contraseña."""
+        if "auth" in self.cookies:
+            log(f"::notice::Sesión guardada: cookies {self._resumen_cookies()}")
+            try:
+                r = self._pedir("GET", "/auth/user") or {}
+                if r.get("id"):
+                    self.yo = r
+                    return False
+                if "totp" in (r.get("requiresTwoFactorAuth") or []) and self.secreto:
+                    # la sesión sigue, solo pide otra vez el 2FA: no hace falta la contraseña
+                    if self._verificar_2fa():
+                        r = self._pedir("GET", "/auth/user") or {}
+                        if r.get("id"):
+                            self.yo = r
+                            log("::notice::Sesión guardada reutilizada (solo pidió el 2FA).")
+                            return False
+                log(f"::notice::Sesión guardada rechazada: {str(r)[:120]}")
+            except VRChatError as e:
+                log(f"::notice::Sesión guardada no válida: {str(e)[:160]}")
         self.cookies = {}
         r = self._pedir("GET", "/auth/user", auth_basica=True) or {}
         metodos = r.get("requiresTwoFactorAuth") or []
@@ -109,14 +119,18 @@ class VRChat:
                                   "pasos con app autenticadora y guarda su clave en el secreto VRC_TOTP.")
             if not self.secreto:
                 raise VRChatError("La cuenta tiene 2FA: falta el secreto VRC_TOTP (la clave de la app autenticadora).")
-            v = self._pedir("POST", "/auth/twofactorauth/totp/verify", {"code": totp(self.secreto)}) or {}
-            if not v.get("verified"):
+            if not self._verificar_2fa():
                 raise VRChatError("VRChat no aceptó el código 2FA. Revisa el secreto VRC_TOTP.")
             r = self._pedir("GET", "/auth/user") or {}
         if not r.get("id"):
             raise VRChatError("No pude iniciar sesión en VRChat con la cuenta del bot.")
         self.yo = r
+        log(f"::notice::Sesión nueva: cookies {self._resumen_cookies()}")
         return True
+
+    def _verificar_2fa(self):
+        v = self._pedir("POST", "/auth/twofactorauth/totp/verify", {"code": totp(self.secreto)}) or {}
+        return bool(v.get("verified"))
 
     # ------------------------------------------------------------ lectura
     def grupos_mios(self):

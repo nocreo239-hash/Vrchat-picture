@@ -216,7 +216,7 @@ def main():
     estado = json.loads(ESTADO.read_text(encoding="utf-8")) if ESTADO.exists() else {}
     vr = VRChat(usuario, contrasena, secreto, leer_sesion(f))
     try:
-        nueva = vr.entrar()
+        nueva = vr.entrar(log)
         if nueva:
             log("::notice::Sesión de VRChat iniciada (se reutiliza en las próximas pasadas).")
         guardar_sesion(f, vr.cookies)
