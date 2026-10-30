@@ -81,4 +81,4 @@ avisos:
   canal: "avisos-instancias"        # canal privado que crea el bot en el servidor del tendedero
   mundo_id: "wrld_b4d8a3fb-3e60-4305-8294-6a70cae985b6"   # Cuervos Club
   grupo_nombre: "cuervos"           # el bot busca entre sus grupos el que contenga esto
-  grupo_id: ""                      # o pon el ID (grp_...) para fijarlo
+  grupo_id: ""                      # o pon el ID (grp_...) para fijarlo (sale en el registro de la pasada)
