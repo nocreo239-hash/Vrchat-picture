@@ -5,7 +5,7 @@ on:
     - cron: "3-59/10 * * * *"   # cada 10 minutos (en minutos 3, 13, 23…: a la hora en punto GitHub va muy cargado)
   workflow_dispatch:            # botón "Run workflow" para correrlo a mano
   push:
-    paths: ["config.yml"]       # al cambiar la configuración
+    paths: ["config.yml", "avisos/**"]   # al cambiar la configuración o los avisos
 
 permissions:
   contents: write               # guardar las fotos aprobadas en el repositorio

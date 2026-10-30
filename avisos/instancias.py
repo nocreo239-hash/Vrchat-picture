@@ -200,9 +200,13 @@ def main():
     usuario = os.environ.get("VRC_USUARIO", "").strip()
     contrasena = os.environ.get("VRC_CONTRASENA", "")
     secreto = os.environ.get("VRC_TOTP", "").strip()
+    faltan = [n for n, v in (("VRC_USUARIO", usuario), ("VRC_CONTRASENA", contrasena), ("VRC_TOTP", secreto)) if not v]
     if not (usuario and contrasena):
-        log("::notice::Avisos de instancias apagados: faltan los secretos VRC_USUARIO / VRC_CONTRASENA / VRC_TOTP.")
+        log(f"::notice::Avisos de instancias apagados: faltan los secretos {', '.join(faltan)} "
+            "(Settings → Secrets and variables → Actions → pestaña Secrets → Repository secrets).")
         return
+    if faltan:
+        log(f"::notice::Falta el secreto {', '.join(faltan)}; si la cuenta tiene 2FA no podrá entrar.")
     cfg["avisos"] = a
     f = _fernet(usuario, contrasena, secreto)
     estado = json.loads(ESTADO.read_text(encoding="utf-8")) if ESTADO.exists() else {}
