@@ -1,7 +1,20 @@
 {
- "ultimo_envio_id": "1568862731015037042",
- "pendientes": [],
- "avisos": [],
+ "ultimo_envio_id": "1568867140843470970",
+ "pendientes": [
+  {
+   "revision_id": "1568867806165073970",
+   "autor": "ღKyokaღ",
+   "recibida": 1794117628,
+   "canal": "1568862732978233406",
+   "autor_id": "447533568084934666"
+  }
+ ],
+ "avisos": [
+  {
+   "id": "1568867820110872631",
+   "borrar": 1794121228
+  }
+ ],
  "ultimo_hash": "180b6287fe8f",
  "ultimo_latido": "2026-11-08",
  "servidor": "1444963662241468539",
