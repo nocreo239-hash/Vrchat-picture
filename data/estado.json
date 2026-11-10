@@ -1,8 +1,8 @@
 {
- "ultimo_envio_id": "1568869048517795901",
+ "ultimo_envio_id": "1569801022304424028",
  "pendientes": [],
  "avisos": [],
- "ultimo_hash": "947a5dbe52a6",
+ "ultimo_hash": "f03a83c9dfbb",
  "ultimo_latido": "2026-11-10",
  "servidor": "1444963662241468539",
  "canal_envios": "1568862730017050634",
@@ -11,5 +11,8 @@
   "1444963662241468539",
   "1494546930108334200",
   "1531051099484721328"
- ]
+ ],
+ "instrucciones_id": "1569801022304424028",
+ "instrucciones_texto": "📸 **Manda aquí tu foto** y aparecerá en el tendedero del mundo, con tu nombre.\n📐 **Formato: foto cuadrada (1:1)**, por ejemplo **1080 × 1080 px**. Si mandas una vertical u horizontal, la Polaroid recorta y solo se ve el cuadrado del centro.\n✅ Los admins la revisan antes de colgarla. Una foto por mensaje.",
+ "instrucciones_canal": "1568862730017050634"
 }
