@@ -17,6 +17,7 @@ import uuid
 from pathlib import Path
 
 import yaml
+from PIL import Image, ImageOps
 
 from . import atlas
 from . import destino
@@ -73,6 +74,22 @@ def snowflake(ts):
     return str((int(ts * 1000) - 1420070400000) << 22)
 
 
+def forma_de(adjunto, datos=None):
+    """'cuadrada', 'vertical' u 'horizontal', como la ve la Polaroid (girada según el EXIF).
+    Abre la foto ya descargada; si no se puede, usa el tamaño que da Discord."""
+    w, h = adjunto.get("width"), adjunto.get("height")
+    if datos:
+        try:
+            with Image.open(io.BytesIO(datos)) as im:
+                w, h = ImageOps.exif_transpose(im).size
+        except Exception:
+            pass
+    if not (w and h):
+        return "cuadrada"
+    r = w / h
+    return "horizontal" if r > 1.08 else "vertical" if r < 0.92 else "cuadrada"
+
+
 def es_imagen(adjunto):
     tipo = (adjunto.get("content_type") or "").lower()
     return tipo.startswith("image/") or adjunto.get("filename", "").lower().endswith(TIPOS_IMAGEN)
@@ -85,6 +102,7 @@ class Tendedero:
         self.ahora = ahora if ahora is not None else time.time()
         self.textos = cfg["textos"]
         self.cambios = []
+        self._bytes = {}   # url -> foto descargada en esta pasada (para ver su forma)
         c = cfg["discord"]
         aprobados = set(datos.estado.get("servidores_aprobados", []))
         d = destino.resolver(c, discord, log, aprobados)
@@ -148,6 +166,7 @@ class Tendedero:
             autor = nombre_de(m["author"], miembro)
             for a in imagenes:
                 datos = self.dc.descargar(a["url"])
+                self._bytes[a["url"]] = datos
                 texto = self.textos["revision"].format(autor=pol.limpiar_nombre(autor))
                 rev = self.dc.enviar(self.revision, texto, datos, a.get("filename") or "foto.jpg")
                 for e in (APROBAR, VIP, RECHAZAR):
@@ -157,8 +176,11 @@ class Tendedero:
                                                     "canal": self.revision, "autor_id": m["author"]["id"]})
                 self.cambios.append(f"recibida de {autor}")
             if c.get("avisar_recibida", True):
-                aviso = self.dc.enviar(self.envios, self.textos["aviso_recibida"].format(mencion=f"<@{m['author']['id']}>"),
-                                       menciones=[m["author"]["id"]])
+                texto = self.textos["aviso_recibida"].format(mencion=f"<@{m['author']['id']}>")
+                formas = {f for f in (forma_de(a, self._bytes.get(a["url"])) for a in imagenes) if f != "cuadrada"}
+                if formas and self.textos.get("aviso_recorte"):
+                    texto += "\n" + self.textos["aviso_recorte"].format(forma=" y ".join(sorted(formas)))
+                aviso = self.dc.enviar(self.envios, texto, menciones=[m["author"]["id"]])
                 if aviso:
                     self.d.estado["avisos"].append({"id": aviso["id"], "borrar": int(self.ahora + 60 * c.get("minutos_aviso", 60))})
             if c.get("borrar_original", True):
@@ -303,7 +325,37 @@ class Tendedero:
                 self.d.estado["avisos"].remove(a)
 
     # ---------------------------------------------------------
+    def asegurar_formato(self):
+        """Que el canal de envíos diga qué formato mandar: su descripción y un mensaje fijado.
+        Solo escribe si algo cambió; si falta permiso, sigue sin romper la pasada."""
+        e = self.d.estado
+        tema = self.textos.get("tema_envios")
+        try:
+            if tema:
+                canal = self.dc.canal(self.envios) or {}
+                if (canal.get("topic") or "") != tema:
+                    self.dc.editar_canal(self.envios, {"topic": tema})
+                    self.cambios.append("descripción del canal de envíos con el formato")
+            instr = self.textos.get("instrucciones")
+            if instr and (e.get("instrucciones_texto") != instr or e.get("instrucciones_canal") != self.envios):
+                viejo = e.get("instrucciones_id") if e.get("instrucciones_canal") == self.envios else None
+                if viejo:
+                    self.dc.editar(self.envios, viejo, instr)
+                else:
+                    msg = self.dc.enviar(self.envios, instr)
+                    if msg:
+                        e["instrucciones_id"] = msg["id"]
+                        try:
+                            self.dc.fijar(self.envios, msg["id"])
+                        except DiscordError as err:
+                            log(f"::warning::No pude fijar las instrucciones en el canal de envíos: {err}")
+                e["instrucciones_texto"], e["instrucciones_canal"] = instr, self.envios
+                self.cambios.append("instrucciones con el formato en el canal de envíos")
+        except DiscordError as err:
+            log(f"::warning::No pude poner el formato en el canal de envíos: {err}")
+
     def pasada(self, salida):
+        self.asegurar_formato()
         self.pasar_envios()
         self.recuperar_huerfanas()
         self.revisar_pendientes()

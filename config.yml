@@ -56,6 +56,12 @@ imagen:
 
 textos:
   aviso_recibida: "📨 {mencion} ¡recibimos tu foto! Los admins la revisan pronto."
+  # Se añade al aviso de recibida si la foto no es cuadrada ({forma}: vertical u horizontal)
+  aviso_recorte: "✂️ Tu foto es {forma}: en la Polaroid solo se ve el **cuadrado del centro**. Si quieres que salga completa, mándala **cuadrada (1:1)**."
+  # Descripción del canal de envíos (el bot la mantiene puesta): qué formato mandar
+  tema_envios: "Manda aquí tu foto para el tendedero de Polaroids del mundo. 📐 Formato: foto CUADRADA (1:1), por ejemplo 1080 × 1080 px. Si es vertical u horizontal, se recorta y solo se ve el cuadrado del centro."
+  # Mensaje que el bot deja (y fija) en el canal de envíos con las instrucciones
+  instrucciones: "📸 **Manda aquí tu foto** y aparecerá en el tendedero del mundo, con tu nombre.\n📐 **Formato: foto cuadrada (1:1)**, por ejemplo **1080 × 1080 px**. Si mandas una vertical u horizontal, la Polaroid recorta y solo se ve el cuadrado del centro.\n✅ Los admins la revisan antes de colgarla. Una foto por mensaje."
   aviso_aprobada: "✅ {mencion} ¡tu foto fue aprobada! En unos minutos aparece en el tendedero del mundo."
   aviso_aprobada_vip: "⭐ {mencion} ¡tu foto fue aprobada como VIP! En unos minutos aparece en el tendedero del mundo."
   revision: "📸 Foto de **{autor}**\n✅ aprobar · ⭐ aprobar como VIP · ❌ rechazar\n⏳ El bot pasa cada pocos minutos: aquí te confirma cuando lo aplique."
@@ -71,7 +77,7 @@ textos:
   caducada: "⌛ Caducó y salió del tendedero"
   pendiente_caducada: "⌛ Nadie la revisó a tiempo"
   invitacion_titulo: "¡Tu foto aquí!"
-  invitacion_texto: "Mándala en Discord"
+  invitacion_texto: "Foto cuadrada · por Discord"
 
 # Avisos de instancias: el bot te escribe en Discord cuando se abre una instancia de tu mundo (Cuervos Club).
 # Necesita una cuenta secundaria de VRChat, en tu grupo y con permiso de ver el registro del grupo,

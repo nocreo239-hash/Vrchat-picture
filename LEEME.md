@@ -13,7 +13,9 @@ como Polaroids colgadas en tu mundo de VRChat, con el nombre de quien la mandó 
 
 ## Cómo funciona
 
-1. Alguien pega su foto en el canal público (por ejemplo `#manda-tu-polaroid`).
+1. Alguien pega su foto en el canal público (por ejemplo `#manda-tu-polaroid`). La foto de la Polaroid es **cuadrada (1:1)**:
+   el bot lo dice en la descripción del canal y en un mensaje fijado, y si alguien manda una vertical u horizontal
+   le avisa que solo se verá el cuadrado del centro.
 2. El bot la pasa al canal privado de revisión y borra la del canal público.
 3. Un admin reacciona: ✅ aprobar · ⭐ aprobar como VIP · ❌ rechazar.
 4. En 10–20 minutos la foto aparece en el mundo.

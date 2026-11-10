@@ -103,6 +103,13 @@ class DiscordFalso:
         r[emoji] = [u for u in r.get(emoji, []) if u["id"] != BOT]
     def editar(self, canal, mid, texto): self.canales[canal][mid]["content"] = texto
     def borrar(self, canal, mid): self.canales.get(canal, {}).pop(mid, None)
+    def canal(self, cid):
+        for sv in self.servidores.values():
+            for c in sv["canales"]:
+                if c["id"] == cid: return c
+        return {"id": cid}
+    def editar_canal(self, cid, datos): self.canal(cid).update(datos); self.temas = getattr(self, "temas", 0) + 1
+    def fijar(self, canal, mid): self.fijados = getattr(self, "fijados", []) + [mid]
 
 
 def main():
@@ -130,7 +137,12 @@ def main():
     assert all(set(m["reacciones"]) == {APROBAR, VIP, RECHAZAR} for m in rev.values()), "faltan reacciones del bot"
     publicos = [m for m in dc.canales["20"].values() if not m["author"].get("bot")]
     assert len(publicos) == 1 and publicos[0]["content"] == "hola", "debía borrar solo los mensajes con foto"
-    avisos = [m for m in dc.canales["20"].values() if m["author"].get("bot")]
+    instr = [m for m in dc.canales["20"].values() if m["author"].get("bot") and m["content"].startswith("📸")]
+    assert len(instr) == 1 and "cuadrada (1:1)" in instr[0]["content"] and dc.fijados == [instr[0]["id"]], "instrucciones fijadas"
+    assert "CUADRADA (1:1)" in dc.canal("20").get("topic", ""), "descripción del canal con el formato"
+    avisos = [m for m in dc.canales["20"].values() if m["author"].get("bot") and not m["content"].startswith("📸")]
+    assert all("✂️" in m["content"] for m in avisos if "cuadrado del centro" in m["content"]), "aviso de recorte"
+    print("  formato: instrucciones fijadas, descripción del canal y", sum("✂️" in m["content"] for m in avisos), "avisos de recorte")
     assert len(avisos) == 3, avisos
     print("1 ok: 4 fotos pasadas a revisión, originales borrados, 3 avisos")
 
@@ -146,7 +158,7 @@ def main():
     assert {f["tipo"] for f in fotos} == {"vip", "comunidad"}
     assert len(tt.d.estado["pendientes"]) == 1, "la del no-admin debe seguir pendiente"
     assert "Rechazada" in dc.canales["30"][ids[3]]["content"]
-    avisos = [m["content"] for m in dc.canales["20"].values() if m["author"].get("bot")]
+    avisos = [m["content"] for m in dc.canales["20"].values() if m["author"].get("bot") and not m["content"].startswith("📸")]
     assert any("aprobada como VIP" in t and "<@71>" in t for t in avisos), avisos
     assert any("fue aprobada!" in t for t in avisos), avisos
     assert not any("<@73>" in t and "aprobada" in t for t in avisos), "avisó una rechazada"

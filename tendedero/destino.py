@@ -132,8 +132,7 @@ def crear_canales(dc, g, chans, env, rev, cfg_discord, yo, log):
         if a is None:
             a = dc.crear_canal(g["id"], normalizar(env), "Manda aquí tu foto para el tendedero del mundo de VRChat. "
                                "Un admin la revisa y en unos minutos aparece colgada con tu nombre.")
-            dc.enviar(a["id"], "📸 **Manda aquí tu foto** y aparecerá en el tendedero del mundo, con tu nombre.\n"
-                               "Los admins la revisan antes de colgarla. Una foto por mensaje.")
+            # las instrucciones (con el formato de la foto) las pone y fija la pasada: asegurar_formato
             log(f"::notice::Creé #{a.get('name')} en '{g.get('name')}'.")
         if b is None:
             # Privado: nadie lo ve salvo el bot y los roles de administrador (y los de roles_admin_ids)

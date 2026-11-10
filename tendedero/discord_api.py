@@ -76,6 +76,15 @@ class Discord:
         datos = {"name": nombre, "type": 0, "topic": tema, "permission_overwrites": overwrites or []}
         return self._json("POST", f"/guilds/{servidor}/channels", datos)
 
+    def canal(self, canal_id):
+        return self._pedir("GET", f"/channels/{canal_id}")
+
+    def editar_canal(self, canal_id, datos):
+        return self._json("PATCH", f"/channels/{canal_id}", datos)
+
+    def fijar(self, canal, mensaje_id):
+        return self._pedir("PUT", f"/channels/{canal}/pins/{mensaje_id}")
+
     def aplicacion(self):
         """La app del bot: trae quién es su dueño (o los miembros de su equipo)."""
         return self._pedir("GET", "/oauth2/applications/@me") or {}
