@@ -95,4 +95,4 @@ avisos:
   publicar_en_grupo: true
   horas_entre_publicaciones: 2      # como mucho una notificación cada 2 horas
   publicacion_titulo: "La casa está abierta"
-  publicacion_texto: "Hay una instancia del grupo abierta en La Casa de los Cuervos. ¡Pasa y ponte cómodo!"
+  publicacion_texto: "La Corte abrió en la casa. ¡Pasa y ponte cómodo!"

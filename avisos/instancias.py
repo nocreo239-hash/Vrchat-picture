@@ -230,7 +230,7 @@ def publicar_en_grupo(a, vr, grupo_id, abierta, estado, ahora, log=log):
         return False
     quien, tipo = abierta
     titulo = str(a.get("publicacion_titulo") or "La casa está abierta")
-    texto = str(a.get("publicacion_texto") or "Hay una instancia del grupo abierta en La Casa de los Cuervos. ¡Pasa y ponte cómodo!")
+    texto = str(a.get("publicacion_texto") or "La Corte abrió en la casa. ¡Pasa y ponte cómodo!")
     texto = texto.format(quien=quien, tipo=tipo or "de grupo")
     try:
         vr.publicar_grupo(grupo_id, titulo[:64], texto[:1000], notificar=True)
