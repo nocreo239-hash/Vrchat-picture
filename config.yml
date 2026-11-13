@@ -91,8 +91,8 @@ avisos:
   grupo_id: "grp_831f2161-ddbe-4394-b1e8-e48793ee7cd2"   # La Corte de Los Cuervos
   # Publicación en el grupo de VRChat cuando se abre una instancia DE GRUPO (no las públicas):
   # a los miembros les llega una notificación dentro de VRChat. La cuenta del bot necesita un rol
-  # del grupo con permiso para publicar anuncios. {quien} = quien la abrió, {tipo} = Grupo+, etc.
+  # del grupo con permiso para publicar anuncios. (Opcional en el texto: {quien} y {tipo}.)
   publicar_en_grupo: true
   horas_entre_publicaciones: 2      # como mucho una notificación cada 2 horas
   publicacion_titulo: "La casa está abierta"
-  publicacion_texto: "{quien} abrió una instancia {tipo} de La Casa de los Cuervos. ¡Pasa y ponte cómodo!"
+  publicacion_texto: "Hay una instancia del grupo abierta en La Casa de los Cuervos. ¡Pasa y ponte cómodo!"
