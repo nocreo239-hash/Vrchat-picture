@@ -1,4 +1,5 @@
-"""Cliente mínimo de la API de VRChat (la no oficial que usan VRCX y compañía), solo lectura.
+"""Cliente mínimo de la API de VRChat (la no oficial que usan VRCX y compañía). Casi todo es lectura;
+lo único que escribe es publicar_grupo (una publicación en el grupo con notificación a los miembros).
 
 Inicia sesión con usuario + contraseña + código 2FA de app autenticadora (TOTP), y guarda la
 sesión cifrada para no volver a iniciarla en cada pasada (VRChat mira mal los logins seguidos).
@@ -148,3 +149,11 @@ class VRChat:
 
     def mundo(self, mundo_id):
         return self._pedir("GET", f"/worlds/{mundo_id}") or {}
+
+    # ------------------------------------------------------------ escritura
+    def publicar_grupo(self, grupo_id, titulo, texto, notificar=True, visibilidad="group"):
+        """Publicación en el grupo; con notificar=True a los miembros les llega una notificación en VRChat.
+        La cuenta del bot necesita un rol del grupo con permiso de publicar (anuncios/publicaciones)."""
+        return self._pedir("POST", f"/groups/{grupo_id}/posts",
+                           {"title": titulo, "text": texto, "sendNotification": bool(notificar),
+                            "visibility": visibilidad}) or {}

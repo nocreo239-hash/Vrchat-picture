@@ -3,6 +3,8 @@
 - Instancias de GRUPO: el registro del grupo dice quién la abrió  ->  "🟢 Fulano abrió una instancia".
 - Instancias PÚBLICAS: VRChat no dice quién las abrió; avisa que hay una nueva y cuánta gente tiene.
 - Las Friends / Invite de otras personas son privadas: la API no las enseña.
+- Además, cuando se abre una instancia de GRUPO, el bot publica en el grupo de VRChat con notificación
+  (avisos.publicar_en_grupo), como mucho una vez cada avisos.horas_entre_publicaciones.
 
 Lo corre el mismo workflow del tendedero, en cada pasada. Usa una cuenta secundaria de VRChat
 (secretos VRC_USUARIO, VRC_CONTRASENA y VRC_TOTP) que esté en el grupo con permiso de ver el registro.
@@ -127,6 +129,7 @@ def pasada(cfg, vr, dc, estado, ahora=None, log=log):
     vistos = set(estado.get("vistos", []))
     publicas_antes = set(estado.get("publicas", []))
     mensajes = []
+    abiertas_grupo = []   # (quién, tipo) de las instancias de grupo nuevas, para la publicación en VRChat
 
     # --- grupo
     grupo_id = str(a.get("grupo_id") or "").strip()
@@ -159,6 +162,7 @@ def pasada(cfg, vr, dc, estado, ahora=None, log=log):
             if ahora - cuando > dt.timedelta(hours=3):
                 continue   # muy viejo (p. ej. la primera vez que lee el registro)
             tipo = describir(ubicacion_de(e))
+            abiertas_grupo.append((e.get("actorDisplayName") or "Alguien", tipo))
             mensajes.append(f"🟢 **{e.get('actorDisplayName') or 'Alguien'}** abrió una instancia "
                             f"{tipo or 'de grupo'} · <t:{int(cuando.timestamp())}:t>")
     else:
@@ -203,10 +207,40 @@ def pasada(cfg, vr, dc, estado, ahora=None, log=log):
         canal_avisos(dc, cfg, log)
         log("::notice::Primera pasada de avisos: marqué lo que ya existía, a partir de ahora aviso lo nuevo.")
 
+    if abiertas_grupo and grupo_id:
+        publicar_en_grupo(a, vr, grupo_id, abiertas_grupo[-1], estado, ahora, log)
+
     estado["iniciado"] = True
     estado["vistos"] = sorted(vistos)[-MAX_RECUERDA:] if len(vistos) > MAX_RECUERDA else sorted(vistos)
     estado["publicas"] = sorted(publicas_ahora)
     return mensajes
+
+
+def publicar_en_grupo(a, vr, grupo_id, abierta, estado, ahora, log=log):
+    """Publicación en el grupo de VRChat (con notificación) por una instancia de grupo nueva."""
+    if not a.get("publicar_en_grupo", False):
+        return False
+    horas = float(a.get("horas_entre_publicaciones", 2))
+    try:
+        ultima = dt.datetime.fromisoformat(estado.get("ultima_publicacion", ""))
+    except ValueError:
+        ultima = None
+    if ultima and ahora - ultima < dt.timedelta(hours=horas):
+        log(f"Publicación en el grupo: la última fue hace menos de {horas:g} h; no notifico otra vez.")
+        return False
+    quien, tipo = abierta
+    titulo = str(a.get("publicacion_titulo") or "La casa está abierta")
+    texto = str(a.get("publicacion_texto") or "{quien} abrió una instancia {tipo}. ¡Pasa!")
+    texto = texto.format(quien=quien, tipo=tipo or "de grupo")
+    try:
+        vr.publicar_grupo(grupo_id, titulo[:64], texto[:1000], notificar=True)
+    except VRChatError as e:
+        log(f"::warning::No pude publicar en el grupo de VRChat (¿la cuenta del bot tiene un rol con permiso "
+            f"de publicar anuncios?): {e}")
+        return False
+    estado["ultima_publicacion"] = ahora.isoformat()
+    log("::notice::Publiqué en el grupo de VRChat (con notificación a los miembros).")
+    return True
 
 
 def main():

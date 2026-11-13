@@ -150,3 +150,15 @@ En el repositorio solo quedan huellas, nunca nombres ni IDs de instancia. Se apa
 `avisos: activado: false` en `config.yml`.
 
 Los avisos salen en cada pasada del bot: si GitHub tarda en lanzar las pasadas programadas, llegan tarde.
+
+### Notificación dentro de VRChat (instancias de grupo)
+
+Cuando se abre una **instancia de grupo** en tu mundo, el bot además publica en el grupo de VRChat con
+**notificación a los miembros** ("La casa está abierta…"). Las públicas no se publican. Para que funcione:
+
+- Dale a la cuenta secundaria, en su rol del grupo, el permiso de **publicar anuncios/publicaciones**.
+  Sin ese permiso el aviso de Discord sale igual y el registro del workflow dice que no pudo publicar.
+- Como mucho publica una vez cada `horas_entre_publicaciones` (2 por defecto), para no cansar a la gente.
+- El título y el texto se cambian en `config.yml` (`publicacion_titulo`, `publicacion_texto`, con `{quien}`
+  y `{tipo}`). Se apaga con `publicar_en_grupo: false`.
+
